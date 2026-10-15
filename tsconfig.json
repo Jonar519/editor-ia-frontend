@@ -1,0 +1,19 @@
+{
+  // Sin TypeScript en el código: tsc solo REVISA el JavaScript (JSDoc) del navegador, los scripts y las
+  // pruebas. "typecheck" incluye las pruebas, igual que en los demás repos.
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["node", "vite/client"],
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.js", "scripts/**/*.mjs", "tests/**/*.mjs", "*.config.js"]
+}
