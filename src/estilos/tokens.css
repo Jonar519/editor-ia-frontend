@@ -1,0 +1,141 @@
+/*
+ * Tokens de diseño de Cuaderno. ÚNICO archivo con colores literales.
+ *
+ * Dos niveles:
+ *   --paleta-*  primitivos (un tono concreto). Solo se usan AQUÍ, para definir los semánticos.
+ *   --color-*   semánticos (un SIGNIFICADO). Son lo único que usan los componentes.
+ *
+ * El significado de cada --color-*, en qué propiedades CSS se puede usar y contra qué fondo se mide su
+ * contraste están en src/estilos/significados.json. scripts/colores.mjs audita que se respete y
+ * scripts/contraste.mjs mide el contraste AA en los dos temas.
+ *
+ * Tema: lo decide el sistema operativo (prefers-color-scheme). Claro por defecto, oscuro si el sistema
+ * lo pide. No hay selector manual.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ─── Paleta (primitivos) ─────────────────────────────────────────────────── */
+  --paleta-blanco: #ffffff;
+  --paleta-gris-50: #f6f7f9;
+  --paleta-gris-100: #e8eaed;
+  --paleta-gris-200: #d9dde3;
+  --paleta-gris-400: #a3abb5;
+  --paleta-gris-500: #6b7480;
+  --paleta-gris-600: #4f5863;
+  --paleta-gris-800: #2a3038;
+  --paleta-gris-850: #1d2128;
+  --paleta-gris-900: #171a1f;
+  --paleta-gris-950: #0f1115;
+
+  --paleta-azul-50: #eaf2fe;
+  --paleta-azul-300: #9cc3ff;
+  --paleta-azul-400: #6ea8fe;
+  --paleta-azul-600: #2463c9;
+  --paleta-azul-700: #1d4f9f;
+
+  --paleta-cian-50: #e4f4f7;
+  --paleta-cian-300: #8fdcec;
+  --paleta-cian-400: #3bbfd8;
+  --paleta-cian-700: #0a6577;
+  --paleta-cian-800: #074b58;
+  --paleta-cian-950: #0b262d;
+
+  --paleta-verde-50: #e7f5ec;
+  --paleta-verde-300: #9fe3b3;
+  --paleta-verde-400: #4ac26b;
+  --paleta-verde-700: #17703a;
+  --paleta-verde-800: #11542b;
+  --paleta-verde-950: #0f2a18;
+
+  --paleta-ambar-50: #fdf3d8;
+  --paleta-ambar-300: #f2d482;
+  --paleta-ambar-400: #e0b03c;
+  --paleta-ambar-700: #8a5a00;
+  --paleta-ambar-800: #634000;
+  --paleta-ambar-950: #2e230a;
+
+  --paleta-rojo-50: #fdeceb;
+  --paleta-rojo-300: #ffb0a9;
+  --paleta-rojo-400: #ff7a70;
+  --paleta-rojo-700: #b3261e;
+  --paleta-rojo-800: #861a14;
+  --paleta-rojo-950: #351412;
+
+  /* ─── Significados, tema claro ────────────────────────────────────────────── */
+  --color-fondo: var(--paleta-gris-50);
+  --color-superficie: var(--paleta-blanco);
+  --color-texto: var(--paleta-gris-900);
+  --color-texto-suave: var(--paleta-gris-600);
+  --color-borde: var(--paleta-gris-200);
+  --color-borde-control: var(--paleta-gris-500);
+  --color-acento: var(--paleta-azul-600);
+  --color-sobre-acento: var(--paleta-blanco);
+  --color-enlace: var(--paleta-azul-700);
+  --color-foco: var(--paleta-azul-600);
+
+  --color-info: var(--paleta-cian-700);
+  --color-info-fondo: var(--paleta-cian-50);
+  --color-info-texto: var(--paleta-cian-800);
+  --color-exito: var(--paleta-verde-700);
+  --color-exito-fondo: var(--paleta-verde-50);
+  --color-exito-texto: var(--paleta-verde-800);
+  --color-aviso: var(--paleta-ambar-700);
+  --color-aviso-fondo: var(--paleta-ambar-50);
+  --color-aviso-texto: var(--paleta-ambar-800);
+  --color-peligro: var(--paleta-rojo-700);
+  --color-peligro-fondo: var(--paleta-rojo-50);
+  --color-peligro-texto: var(--paleta-rojo-800);
+
+  /* ─── Tipografía, espacio, forma y movimiento (iguales en los dos temas) ──── */
+  --fuente-texto: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --fuente-codigo: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+  --tamano-pequeno: 0.875rem;
+  --tamano-base: 1rem;
+  --tamano-titulo: 1.75rem;
+  --interlineado: 1.5;
+
+  --espacio-1: 0.25rem;
+  --espacio-2: 0.5rem;
+  --espacio-3: 0.75rem;
+  --espacio-4: 1rem;
+  --espacio-6: 1.5rem;
+  --espacio-8: 2rem;
+
+  --radio: 0.375rem;
+  --ancho-contenido: 48rem;
+  --grosor-foco: 3px;
+
+  /* La ÚNICA animación de la interfaz (base.css, @keyframes aparecer). */
+  --duracion-aparecer: 160ms;
+}
+
+/* ─── Significados, tema oscuro ─────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fondo: var(--paleta-gris-950);
+    --color-superficie: var(--paleta-gris-900);
+    --color-texto: var(--paleta-gris-100);
+    --color-texto-suave: var(--paleta-gris-400);
+    --color-borde: var(--paleta-gris-800);
+    --color-borde-control: var(--paleta-gris-500);
+    --color-acento: var(--paleta-azul-400);
+    --color-sobre-acento: var(--paleta-gris-950);
+    --color-enlace: var(--paleta-azul-300);
+    --color-foco: var(--paleta-azul-300);
+
+    --color-info: var(--paleta-cian-400);
+    --color-info-fondo: var(--paleta-cian-950);
+    --color-info-texto: var(--paleta-cian-300);
+    --color-exito: var(--paleta-verde-400);
+    --color-exito-fondo: var(--paleta-verde-950);
+    --color-exito-texto: var(--paleta-verde-300);
+    --color-aviso: var(--paleta-ambar-400);
+    --color-aviso-fondo: var(--paleta-ambar-950);
+    --color-aviso-texto: var(--paleta-ambar-300);
+    --color-peligro: var(--paleta-rojo-400);
+    --color-peligro-fondo: var(--paleta-rojo-950);
+    --color-peligro-texto: var(--paleta-rojo-300);
+  }
+}
