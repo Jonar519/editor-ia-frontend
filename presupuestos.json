@@ -1,0 +1,16 @@
+{
+  "descripcion": "Topes del build en KiB con gzip. Los topes los propone el equipo y los CONFIRMA POR ESCRITO la dueña o dueño del proyecto: mientras un tope esté en null, scripts/presupuestos.mjs mide e informa, pero no falla por él. Con un número, el build falla si se pasa. Nunca se sube un tope para que el build pase.",
+  "estado": "propuesta pendiente de confirmación escrita",
+  "roles": {
+    "publico": ["publico"],
+    "lector": ["publico", "lector"],
+    "editor": ["publico", "lector", "editor"],
+    "admin": ["publico", "lector", "editor", "admin"]
+  },
+  "topesKiBGzip": {
+    "primeraCargaJs": null,
+    "jsPorRol": { "publico": null, "lector": null, "editor": null, "admin": null },
+    "maxChunkJs": null,
+    "cssTotal": null
+  }
+}
