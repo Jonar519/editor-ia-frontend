@@ -206,6 +206,168 @@
       "reemplazo": "@media (prefers-color-scheme: light) {",
       "comando": "test",
       "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H24",
+      "regla": "Presupuestos: una diferida no cuenta lo que su importador ya cargó",
+      "archivo": "scripts/lib/presupuestos.mjs",
+      "buscar": "return [...archivos].filter((a) => !base.has(a))",
+      "reemplazo": "return [...archivos].filter((a) => !primera.has(a))",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presupuestos.test.mjs"]
+    },
+    {
+      "id": "H25",
+      "regla": "Presupuestos: por chunk se compara el MAYOR (cada lenguaje)",
+      "archivo": "scripts/lib/presupuestos.mjs",
+      "buscar": ".sort((a, b) => b.bytes - a.bytes)",
+      "reemplazo": ".sort((a, b) => a.bytes - b.bytes)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presupuestos.test.mjs"]
+    },
+    {
+      "id": "H26",
+      "regla": "API: con sesión, la petición lleva Authorization: Bearer",
+      "archivo": "src/api/cliente.js",
+      "buscar": "if (conSesion && acceso) cabeceras.authorization",
+      "reemplazo": "if (false) cabeceras.authorization",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H27",
+      "regla": "API: UN solo refresco a la vez (promesa compartida)",
+      "archivo": "src/api/cliente.js",
+      "buscar": "    if (refrescoEnCurso) return refrescoEnCurso;\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H28",
+      "regla": "API: tras refrescar se reintenta UNA sola vez (sin bucle)",
+      "archivo": "src/api/cliente.js",
+      "buscar": "if (await refrescar()) return intento(false);",
+      "reemplazo": "if (await refrescar()) return intento(true);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H29",
+      "regla": "API: un refresco rechazado olvida la sesión",
+      "archivo": "src/api/cliente.js",
+      "buscar": "        return true;\n      }\n      olvidarSesion();\n      return false;",
+      "reemplazo": "        return true;\n      }\n      return false;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H30",
+      "regla": "API: se refresca antes de que venza el access token",
+      "archivo": "src/api/cliente.js",
+      "buscar": "if (conSesion && acceso && venceMs - ahora() < MARGEN_REFRESCO_MS) await refrescar();",
+      "reemplazo": "if (false) await refrescar();",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H31",
+      "regla": "API: entre pestañas, el refresco va dentro del cerrojo de Web Locks",
+      "archivo": "src/api/cliente.js",
+      "buscar": "return cerrojos ? /** @type {boolean} */ (await cerrojos.request(CERROJO_REFRESCO, hacer)) : await hacer();",
+      "reemplazo": "return await hacer();",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H32",
+      "regla": "API: renovar el token no redibuja la vista (solo avisa si cambia la cuenta o el rol)",
+      "archivo": "src/api/cliente.js",
+      "buscar": "    if (cambio) avisar();",
+      "reemplazo": "    avisar();",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H33",
+      "regla": "API: un 429 informa cuánto esperar (Retry-After)",
+      "archivo": "src/api/cliente.js",
+      "buscar": "reintentarEnSegundos: Number.isFinite(espera) && espera > 0 ? espera : undefined,",
+      "reemplazo": "reintentarEnSegundos: undefined,",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H34",
+      "regla": "API: sin red, el error tiene el código estable \"red\"",
+      "archivo": "src/api/cliente.js",
+      "buscar": "throw new ErrorApi({ estado: 0, codigo: 'red', mensaje",
+      "reemplazo": "throw new ErrorApi({ estado: 0, codigo: 'desconocido', mensaje",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H35",
+      "regla": "Service Worker: /api nunca pasa por la caché",
+      "archivo": "src/sw/sw.js",
+      "buscar": "  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return 'ignorar';\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/sw.test.mjs"]
+    },
+    {
+      "id": "H36",
+      "regla": "Service Worker: solo el mismo origen",
+      "archivo": "src/sw/sw.js",
+      "buscar": "  if (url.origin !== p.origen) return 'ignorar';\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/sw.test.mjs"]
+    },
+    {
+      "id": "H37",
+      "regla": "Service Worker: solo GET",
+      "archivo": "src/sw/sw.js",
+      "buscar": "  if (p.metodo !== 'GET') return 'ignorar';\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/sw.test.mjs"]
+    },
+    {
+      "id": "H38",
+      "regla": "Service Worker: la caché de /assets ignora Vary (si no, la app no abre sin red)",
+      "archivo": "src/sw/sw.js",
+      "buscar": "caches.match(req, { ignoreVary: true }).then(",
+      "reemplazo": "caches.match(req).then(",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/sw.test.mjs"]
+    },
+    {
+      "id": "H39",
+      "regla": "Service Worker: precarga solo el armazón y las vistas públicas",
+      "archivo": "scripts/sw-precache.mjs",
+      "buscar": "if (a.esEntrada || publica) agregar(a.archivo);",
+      "reemplazo": "agregar(a.archivo);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/sw.test.mjs"]
+    },
+    {
+      "id": "H40",
+      "regla": "Color R3 en JS: los nombres de color solo cuentan en un contexto de estilo (\"red\" es la red)",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "const literal = CONTEXTO_DE_ESTILO.test(l) ? LITERAL : LITERAL_SIN_NOMBRES;",
+      "reemplazo": "const literal = LITERAL;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H41",
+      "regla": "Color R3 en JS: los comentarios // no cuentan",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "const l = sinComentarioDeLinea(original);",
+      "reemplazo": "const l = original;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
     }
   ]
 }
