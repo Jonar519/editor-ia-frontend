@@ -89,8 +89,11 @@
   --color-peligro-texto: var(--paleta-rojo-800);
 
   /* ─── Tipografía, espacio, forma y movimiento (iguales en los dos temas) ──── */
-  --fuente-texto: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
-  --fuente-codigo: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+  /* Fuentes AUTOALOJADAS (src/main.js las importa de @fontsource-variable, licencia SIL OFL 1.1): se sirven
+     desde el mismo origen, sin CDN ni terceros. Solo latin y latin-ext; unicode-range hace que el navegador
+     baje únicamente el subconjunto que usa la página. Si una no carga, sigue la del sistema (swap). */
+  --fuente-texto: 'Atkinson Hyperlegible Next Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fuente-codigo: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
   --tamano-pequeno: 0.875rem;
   --tamano-base: 1rem;
   --tamano-titulo: 1.75rem;
