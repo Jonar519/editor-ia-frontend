@@ -2,9 +2,8 @@
 // tokens.css, no se copian: si cambia un token, la prueba sigue siendo válida.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { AxeBuilder } from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
 import { hexARgb, resolver, temas } from '../../scripts/lib/contraste.mjs';
+import { axeEstable, expect, test } from './fixtures.mjs';
 
 const tokens = temas(readFileSync(path.join(import.meta.dirname, '../../src/estilos/tokens.css'), 'utf8'));
 const rgb = (/** @type {string} */ hex) => `rgb(${hexARgb(hex).join(', ')})`;
@@ -38,7 +37,6 @@ test('una dirección que no existe: "Página no encontrada" con el foco en el t�
 test('saltar al contenido: es lo primero que se enfoca, aparece al enfocarlo y no cambia de vista', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
-  // eslint-disable-next-line no-undef -- se evalúa dentro del navegador
   const primero = await page.evaluate(() => document.querySelector('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')?.textContent);
   expect(primero).toBe('Saltar al contenido');
   const saltar = page.getByRole('link', { name: 'Saltar al contenido' });
@@ -77,8 +75,7 @@ for (const esquema of /** @type {const} */ (['light', 'dark'])) {
       test(`axe sin violaciones WCAG 2.1 A/AA en ${ruta}`, async ({ page }) => {
         await page.goto(ruta);
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-        const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
-        expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+        expect(await axeEstable(page)).toEqual([]);
       });
     }
   });

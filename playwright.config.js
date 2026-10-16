@@ -15,6 +15,9 @@ export default defineConfig({
     timezoneId: 'UTC',
     colorScheme: 'light',
     trace: 'retain-on-failure',
+    // Con un Service Worker activo, page.route() no ve las peticiones que él atiende. Las pruebas lo
+    // bloquean salvo tests/e2e/sw.spec.mjs, que lo prueba a él.
+    serviceWorkers: 'block',
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
