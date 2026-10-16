@@ -18,12 +18,15 @@ try {
   console.error('No hay build: corre "npm run build" antes.');
   process.exit(2);
 }
-/** @type {{ estado: string, roles: Record<string, string[]>, topesKiBGzip: import('./lib/presupuestos.mjs').Topes }} */
+/**
+ * @type {{ estado: string, roles: Record<string, string[]>, diferidas?: Record<string, import('./lib/presupuestos.mjs').Diferida>,
+ *   topesKiBGzip: import('./lib/presupuestos.mjs').Topes }}
+ */
 const config = JSON.parse(readFileSync(path.join(RAIZ, 'presupuestos.json'), 'utf8'));
 
 // Nivel 9: el peor caso para nosotros es el mejor caso de compresión del servidor; no nos favorece.
 const bytesGzip = (/** @type {string} */ archivo) => gzipSync(readFileSync(path.join(DIST, archivo)), { level: 9 }).length;
-const filas = comparar(medir(manifiesto, bytesGzip, config.roles), config.topesKiBGzip);
+const filas = comparar(medir(manifiesto, bytesGzip, config.roles, config.diferidas), config.topesKiBGzip);
 
 console.log(`Presupuestos (KiB con gzip). Estado: ${config.estado}\n`);
 for (const f of filas) {
