@@ -92,6 +92,56 @@ Los topes viven en `presupuestos.json`:
 - Con un número, el build falla si se pasa.
 - Nunca se sube un tope para que el build pase.
 
+**Topes aplicados (confirmados por escrito al cerrar H1), en KiB con gzip:**
+
+| Medida | Tope |
+|---|---|
+| JS de primera carga | 25 |
+| Rol público | 40 |
+| Rol lector | 140 |
+| Rol editor | 210 |
+| Rol admin | 225 |
+| Chunk más grande | 160 |
+| CSS total | 30 |
+
+**Diferidas.** Son las librerías que una vista carga bajo demanda: un envoltorio en `src/diferidas/` o un lenguaje de `@codemirror/language-data`.
+
+- Se miden aparte del JS del rol, con lo que traen **además** de lo que ya cargó quien las pide.
+- Los lenguajes se miden de uno en uno y se compara el mayor.
+- Sus topes (highlight 60, lenguaje 35) están en `null` hasta que se confirmen. KaTeX se decide en el bloque O.
+- Mermaid queda fuera: es mejora futura, sin excepción al tope por chunk.
+
+### API y sesión (`src/api/cliente.js`, `src/sesion.js`)
+
+- **Token solo en memoria.** El access token no se guarda en `localStorage`, `sessionStorage`, IndexedDB ni en cookies accesibles por JS (hay una prueba que lo verifica). Al recargar se pide otro con la cookie de refresco, que es httpOnly y SameSite=Strict.
+- **Un solo refresco a la vez.** En la pestaña, una promesa compartida; entre pestañas, el cerrojo de Web Locks `cuaderno-refresco`. Dos refrescos simultáneos con la misma cookie cuentan como reutilización y el backend revocaría la sesión.
+- **Reintento.** Un 401 `no_autenticado` refresca y reintenta **una** vez. Se refresca 30 s antes de que venza el token.
+- **Errores.** Siempre son `ErrorApi` con un código estable. Si no hubo respuesta: `red` o `tiempo_agotado` (15 s). Un 429 informa cuánto esperar (`Retry-After`).
+- **Cambios de sesión.** Si la sesión termina o cambian la cuenta o el rol, el router vuelve a evaluar la vista. Renovar el token no redibuja nada.
+
+### Estados explícitos (`src/componentes/estado.js`)
+
+`conDatos()` muestra cargando, el contenido, vacío o error.
+
+- **"Reintentar"** repite la **petición** sin recargar la página.
+- **Excepción:** una vista que no cargó por `import()` sí recarga. Chromium guarda el `import()` fallido en el mapa de módulos del documento, y solo recargar lo limpia.
+- **Avisos al lector de pantalla:** los errores se anuncian en la región viva `#anuncios`.
+
+### Service Worker (`src/sw/sw.js`)
+
+- **Solo en el build.** El plugin de `vite.config.js` lo emite como `/sw.js`, con su versión y su lista de precarga.
+- **Precarga solo el armazón:** la página, la entrada, el CSS y las vistas públicas. El código de cada rol y las fuentes se cachean al usarse: una persona lectora no descarga el editor en segundo plano.
+- **Navegación:** red primero; sin red, la página de la caché. **`/assets/*`:** caché primero, con `ignoreVary`, porque el servidor responde `Vary: Origin`.
+- **`/api` nunca pasa por la caché.** Tampoco lo que no es GET ni lo de otro origen.
+
+### Fuentes autoalojadas
+
+**Atkinson Hyperlegible Next** (texto) y **JetBrains Mono** (código), variables, desde `@fontsource-variable`.
+
+- Se sirven del mismo origen, sin CDN.
+- `unicode-range` hace que solo se descargue el subconjunto que usa la página. Para español: unos 34 KB del texto, 37 KB de su cursiva si se usa, y 40 KB del código si aparece.
+- Licencia SIL OFL 1.1: va publicada junto a la app en `/licencias/`.
+
 ### Accesibilidad
 
 - axe (WCAG 2.1 A/AA) en las pruebas de punta a punta, en los dos temas.
