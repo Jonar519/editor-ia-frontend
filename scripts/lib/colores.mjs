@@ -20,6 +20,30 @@ import { primitivoDe, temas } from './contraste.mjs';
 
 /** Colores literales: hexadecimales, funciones de color y nombres de color de CSS más comunes. */
 const LITERAL = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(|\b(?:white|black|red|green|blue|yellow|orange|purple|pink|gray|grey|silver|navy|teal|maroon|olive|lime|aqua|fuchsia)\b/i;
+/**
+ * En el JavaScript, los NOMBRES de color solo cuentan en un contexto de estilo: en español "red" es la
+ * red (de conexión), no el color. Hexadecimales y funciones de color cuentan siempre.
+ */
+const LITERAL_SIN_NOMBRES = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/i;
+const CONTEXTO_DE_ESTILO = /\.style\b|setProperty\(|cssText|\bstyle\s*[=:]/;
+
+/**
+ * Quita los comentarios de línea (//) de una línea de JavaScript, sin tocar los "//" dentro de cadenas
+ * (por ejemplo, "http://").
+ * @param {string} linea
+ */
+function sinComentarioDeLinea(linea) {
+  /** @type {string | null} */
+  let comilla = null;
+  for (let i = 0; i < linea.length; i++) {
+    const c = linea[i];
+    if (comilla) {
+      if (c === comilla && linea[i - 1] !== '\\') comilla = null;
+    } else if (c === '"' || c === "'" || c === '`') comilla = c;
+    else if (c === '/' && linea[i + 1] === '/') return linea.slice(0, i);
+  }
+  return linea;
+}
 
 /**
  * @param {{ tokens: Archivo, css: Archivo[], js: Archivo[], registro: Registro }} e
@@ -78,10 +102,12 @@ export function auditarColores(e) {
   for (const a of e.js) {
     quitarComentarios(a.texto)
       .split('\n')
-      .forEach((/** @type {string} */ l, /** @type {number} */ i) => {
+      .forEach((/** @type {string} */ original, /** @type {number} */ i) => {
+        const l = sinComentarioDeLinea(original);
         if (/--paleta-/.test(l)) problemas.push({ regla: 'R4', archivo: a.archivo, linea: i + 1, mensaje: 'usa un primitivo (--paleta-*)' });
+        const literal = CONTEXTO_DE_ESTILO.test(l) ? LITERAL : LITERAL_SIN_NOMBRES;
         for (const cadena of l.match(/(['"`])(?:(?!\1).)*\1/g) ?? []) {
-          if (LITERAL.test(cadena)) problemas.push({ regla: 'R3', archivo: a.archivo, linea: i + 1, mensaje: `color literal en una cadena: ${cadena}` });
+          if (literal.test(cadena)) problemas.push({ regla: 'R3', archivo: a.archivo, linea: i + 1, mensaje: `color literal en una cadena: ${cadena}` });
         }
       });
   }
