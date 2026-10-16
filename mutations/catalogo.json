@@ -1,0 +1,211 @@
+{
+  "mutaciones": [
+    {
+      "id": "H01",
+      "regla": "Contraste: la luminancia usa la curva sRGB (no lineal)",
+      "archivo": "scripts/lib/contraste.mjs",
+      "buscar": "return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;",
+      "reemplazo": "return c;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/contraste.test.mjs"]
+    },
+    {
+      "id": "H02",
+      "regla": "Contraste: sin redondeo a favor (4.48 no cumple 4.5)",
+      "archivo": "scripts/lib/contraste.mjs",
+      "buscar": "cumple: razon >= p.minimo",
+      "reemplazo": "cumple: razon + 0.05 >= p.minimo",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/contraste.test.mjs"]
+    },
+    {
+      "id": "H03",
+      "regla": "Contraste: el tema oscuro se mide con SUS valores",
+      "archivo": "scripts/lib/contraste.mjs",
+      "buscar": "else if (d.contexto.some((c) => /prefers-color-scheme:\\s*dark/.test(c))) soloOscuro.set(d.propiedad, d.valor);",
+      "reemplazo": "else if (false) soloOscuro.set(d.propiedad, d.valor);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/contraste.test.mjs"]
+    },
+    {
+      "id": "H04",
+      "regla": "Color R1: todo color semántico tiene significado registrado",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (!registrados.includes(n)) problemas.push",
+      "reemplazo": "if (false) problemas.push",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H05",
+      "regla": "Color R2: todo color semántico existe en el tema oscuro",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (!t.soloOscuro.has(n)) problemas.push",
+      "reemplazo": "if (false) problemas.push",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H06",
+      "regla": "Color R3: en tokens.css, literales solo en primitivos",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (LITERAL.test(d.valor) && !d.propiedad.startsWith('--paleta-')) {",
+      "reemplazo": "if (false) {",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H07",
+      "regla": "Color R3: ningún color literal en el CSS de componentes",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (LITERAL.test(d.valor)) problemas.push({ regla: 'R3'",
+      "reemplazo": "if (false) problemas.push({ regla: 'R3'",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H08",
+      "regla": "Color R4: los componentes no usan primitivos",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (v.startsWith('--paleta-')) problemas.push",
+      "reemplazo": "if (false) problemas.push",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H09",
+      "regla": "Color R5: cada significado solo en las propiedades que permite",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "else if (!s.usos.includes(d.propiedad)) {",
+      "reemplazo": "else if (false) {",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H10",
+      "regla": "Color R6: los estados no comparten tono",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (otro) problemas.push",
+      "reemplazo": "if (false) problemas.push",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H11",
+      "regla": "Color R7: exactamente un @keyframes (ni cero ni dos)",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (keyframes !== 1) problemas.push",
+      "reemplazo": "if (keyframes > 1) problemas.push",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H12",
+      "regla": "Color R7: la animación solo con prefers-reduced-motion: no-preference",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "&& !d.contexto.some((c) => /prefers-reduced-motion:\\s*no-preference/.test(c))",
+      "reemplazo": "&& false",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H13",
+      "regla": "Color R7: ninguna transición",
+      "archivo": "scripts/lib/colores.mjs",
+      "buscar": "if (d.propiedad === 'transition' || d.propiedad.startsWith('transition-')) {",
+      "reemplazo": "if (false) {",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H14",
+      "regla": "Presupuestos: se excede solo si la medida es MAYOR que el tope",
+      "archivo": "scripts/lib/presupuestos.mjs",
+      "buscar": "excedido: f.tope !== null && f.medido > f.tope",
+      "reemplazo": "excedido: f.tope !== null && f.medido >= f.tope",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presupuestos.test.mjs"]
+    },
+    {
+      "id": "H15",
+      "regla": "Presupuestos: un tope sin confirmar (null) no se aplica",
+      "archivo": "scripts/lib/presupuestos.mjs",
+      "buscar": "excedido: f.tope !== null && f.medido > f.tope",
+      "reemplazo": "excedido: f.medido > (f.tope ?? 0)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presupuestos.test.mjs"]
+    },
+    {
+      "id": "H16",
+      "regla": "Presupuestos: cada rol cuenta solo las vistas de sus grupos",
+      "archivo": "scripts/lib/presupuestos.mjs",
+      "buscar": "if (e.isDynamicEntry && grupo && grupos.includes(grupo))",
+      "reemplazo": "if (e.isDynamicEntry && grupo)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presupuestos.test.mjs"]
+    },
+    {
+      "id": "H17",
+      "regla": "Presupuestos: la primera carga no incluye las vistas dinámicas",
+      "archivo": "scripts/lib/presupuestos.mjs",
+      "buscar": "for (const i of e.imports ?? []) estaticos(m, i, acumulado);",
+      "reemplazo": "for (const i of [...(e.imports ?? []), ...(e.dynamicImports ?? [])]) estaticos(m, i, acumulado);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presupuestos.test.mjs"]
+    },
+    {
+      "id": "H18",
+      "regla": "Router: sin sesión, lo protegido no se muestra",
+      "archivo": "src/router.js",
+      "buscar": "if (r.ruta.grupo === 'publico') return { tipo: 'vista', ...r };",
+      "reemplazo": "return { tipo: 'vista', ...r };",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/router.test.mjs"]
+    },
+    {
+      "id": "H19",
+      "regla": "Router: cada rol abre solo sus grupos",
+      "archivo": "src/router.js",
+      "buscar": "return grupos.includes(r.ruta.grupo) ? { tipo: 'vista', ...r }",
+      "reemplazo": "return true ? { tipo: 'vista', ...r }",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/router.test.mjs"]
+    },
+    {
+      "id": "H20",
+      "regla": "Router: un ancla de la página (#contenido) no es una ruta",
+      "archivo": "src/router.js",
+      "buscar": "  if (!hash.startsWith('#/')) return null;\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/router.test.mjs"]
+    },
+    {
+      "id": "H21",
+      "regla": "DOM: h() rechaza atributos de evento (on*)",
+      "archivo": "src/dom.js",
+      "buscar": "if (/^on/i.test(nombre)) throw",
+      "reemplazo": "if (false) throw",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/dom.test.mjs"]
+    },
+    {
+      "id": "H22",
+      "regla": "Estilos: la animación respeta prefers-reduced-motion (auditoría del proyecto real)",
+      "archivo": "src/estilos/base.css",
+      "buscar": "@media (prefers-reduced-motion: no-preference) {",
+      "reemplazo": "@media all {",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H23",
+      "regla": "Estilos: el tema oscuro existe y define todos los significados (auditoría del proyecto real)",
+      "archivo": "src/estilos/tokens.css",
+      "buscar": "@media (prefers-color-scheme: dark) {",
+      "reemplazo": "@media (prefers-color-scheme: light) {",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/colores.test.mjs"]
+    }
+  ]
+}
