@@ -21,6 +21,7 @@ export const RUTAS = [
   { patron: '/', grupo: 'publico', titulo: 'Inicio', cargar: () => import('./vistas/publico/inicio.js') },
   { patron: '/entrar', grupo: 'publico', titulo: 'Entrar', cargar: () => import('./vistas/publico/entrar.js') },
   { patron: '/documentos', grupo: 'lector', titulo: 'Documentos', cargar: () => import('./vistas/lector/documentos.js') },
+  { patron: '/cuenta', grupo: 'lector', titulo: 'Tu cuenta', cargar: () => import('./vistas/lector/cuenta.js') },
   { patron: '/documentos/:id/editar', grupo: 'editor', titulo: 'Editar documento', cargar: () => import('./vistas/editor/editar.js') },
   { patron: '/admin', grupo: 'admin', titulo: 'Administración', cargar: () => import('./vistas/admin/panel.js') },
 ];

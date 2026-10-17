@@ -15,5 +15,8 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/**/*.js", "scripts/**/*.mjs", "tests/**/*.mjs", "*.config.js"]
+  "include": ["src/**/*.js", "scripts/**/*.mjs", "tests/**/*.mjs", "*.config.js"],
+  // El Service Worker es un script clásico con los globales de ServiceWorkerGlobalScope (no del DOM) y
+  // marcadores que reemplaza el build. Lo revisan ESLint y sus pruebas (tests/unitarias/sw.test.mjs).
+  "exclude": ["src/sw/sw.js"]
 }

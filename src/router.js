@@ -92,7 +92,10 @@ const vistaSinPermiso = () =>
   );
 
 /**
+ * Arranca el router. Devuelve `navegar` para volver a evaluar la ruta actual (por ejemplo, cuando la
+ * sesión cambia) y `listo`, la primera navegación.
  * @param {{ rutas: Ruta[], raiz: HTMLElement, sesion: () => Sesion, ventana?: Window }} o
+ * @returns {{ navegar: () => Promise<void>, listo: Promise<void> }}
  */
 export function iniciarRouter(o) {
   const w = o.ventana ?? window;
@@ -153,5 +156,5 @@ export function iniciarRouter(o) {
     o.raiz.focus();
   });
   w.addEventListener('hashchange', () => void navegar());
-  return navegar();
+  return { navegar, listo: navegar() };
 }

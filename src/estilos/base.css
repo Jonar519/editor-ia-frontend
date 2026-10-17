@@ -172,8 +172,32 @@ a {
   font-weight: 700;
 }
 
-.cargando {
+.cargando,
+.vacio {
   color: var(--color-texto-suave);
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--fuente-codigo);
+}
+
+/* Lista de datos (etiqueta: valor). */
+.datos {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--espacio-2) var(--espacio-4);
+  margin: 0 0 var(--espacio-4);
+}
+
+.datos dt {
+  font-weight: 700;
+}
+
+.datos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .solo-lectores {

@@ -60,6 +60,57 @@ describe('medir', () => {
   });
 });
 
+describe('diferidas (bajo demanda desde una vista, fuera del JS del rol)', () => {
+  // El editor importa con import() el envoltorio de highlight y dos lenguajes de CodeMirror.
+  /** @type {import('../../scripts/lib/presupuestos.mjs').Manifiesto} */
+  const CON_DIFERIDAS = {
+    ...MANIFIESTO,
+    'src/vistas/editor/editar.js': { ...MANIFIESTO['src/vistas/editor/editar.js'], file: 'assets/editar.js', dynamicImports: ['src/diferidas/highlight.js', 'node_modules/@codemirror/lang-python/dist/index.js', 'node_modules/@codemirror/lang-sql/dist/index.js'] },
+    'src/diferidas/highlight.js': { file: 'assets/highlight.js', src: 'src/diferidas/highlight.js', isDynamicEntry: true, imports: ['_dom.js', '_hl-core.js'] },
+    '_hl-core.js': { file: 'assets/hl-core.js' },
+    // Python comparte con la vista del editor el chunk de "lista" (ya cargado cuando se pide).
+    'node_modules/@codemirror/lang-python/dist/index.js': { file: 'assets/python.js', src: 'node_modules/@codemirror/lang-python/dist/index.js', isDynamicEntry: true, imports: ['_lista.js'] },
+    'node_modules/@codemirror/lang-sql/dist/index.js': { file: 'assets/sql.js', src: 'node_modules/@codemirror/lang-sql/dist/index.js', isDynamicEntry: true },
+  };
+  const TAM = { ...BYTES, 'assets/highlight.js': 20 * 1024, 'assets/hl-core.js': 31 * 1024, 'assets/python.js': 12 * 1024, 'assets/sql.js': 9 * 1024 };
+  const tam = (/** @type {string} */ a) => TAM[/** @type {keyof typeof TAM} */ (a)] ?? 0;
+  const DIFERIDAS = {
+    highlight: { patron: '^src/diferidas/highlight' },
+    katex: { patron: '^src/diferidas/katex' },
+    lenguaje: { patron: 'node_modules/@codemirror/(lang-|legacy-modes)', porChunk: true },
+  };
+  const m = medir(CON_DIFERIDAS, tam, ROLES, DIFERIDAS);
+
+  it('una diferida cuenta lo que trae ADEMÁS de la primera carga (dom.js ya estaba)', () => {
+    expect(m.diferidas.highlight).toMatchObject({ kib: 51, chunks: 1 }); // 20 + 31, sin dom
+  });
+
+  it('por chunk: cada lenguaje por separado; se compara el mayor; lo que ya cargó su importador no cuenta', () => {
+    // python 12 KiB; su chunk compartido "lista" (4 KiB) ya lo trajo la vista del editor.
+    expect(m.diferidas.lenguaje).toMatchObject({ kib: 12, chunks: 2 });
+    expect(m.diferidas.lenguaje?.detalle).toMatch(/lang-python/);
+  });
+
+  it('sin chunks que coincidan: 0 y lo dice', () => {
+    expect(m.diferidas.katex).toEqual({ kib: 0, chunks: 0, detalle: 'sin chunks' });
+  });
+
+  it('las diferidas NO entran al JS del rol (el editor sigue igual)', () => {
+    expect(m.jsPorRol.editor).toBe(70);
+  });
+
+  it('con tope: se compara; sin tope (null): solo se informa', () => {
+    const filas = comparar(m, {
+      primeraCargaJs: null,
+      jsPorRol: {},
+      maxChunkJs: null,
+      cssTotal: null,
+      diferidas: { highlight: 50, katex: null, lenguaje: 35 },
+    });
+    expect(filas.filter((f) => f.excedido).map((f) => f.nombre)).toEqual([expect.stringMatching(/^Diferida highlight/)]);
+  });
+});
+
 describe('comparar', () => {
   const m = medir(MANIFIESTO, tamano, ROLES);
   const SIN_TOPES = { primeraCargaJs: null, jsPorRol: { publico: null, lector: null, editor: null, admin: null }, maxChunkJs: null, cssTotal: null };

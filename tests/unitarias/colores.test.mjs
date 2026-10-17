@@ -73,6 +73,18 @@ describe('auditoría de significado de color', () => {
     expect(reglas(auditar({ css: `${CSS_BIEN}\np { color: rgb(0 0 0); }` }))).toContain('R3');
     expect(reglas(auditar({ css: `${CSS_BIEN}\np { border-color: red; }` }))).toContain('R3');
     expect(reglas(auditar({ js: "el.style.color = '#ff0000';" }))).toContain('R3');
+    expect(reglas(auditar({ js: "el.style.color = 'red';" }))).toContain('R3');
+    expect(reglas(auditar({ js: "el.style.setProperty('border-color', 'navy');" }))).toContain('R3');
+  });
+
+  it('R3 en JS: "red" en español (la red de conexión) NO es un color; los comentarios // tampoco cuentan', () => {
+    expect(auditar({ js: "throw new ErrorApi({ codigo: 'red', mensaje: 'Revisa tu red.' });" })).toEqual([]);
+    expect(auditar({ js: "if (que === 'red-primero') return;" })).toEqual([]);
+    // Un comentario que documenta código viejo con un color entre comillas no es código.
+    expect(auditar({ js: "const a = 1; // antes: el.style.color = '#ff0000'" })).toEqual([]);
+    expect(auditar({ js: "fetch('http://127.0.0.1/a'); // nada" })).toEqual([]);
+    // Un hexadecimal en una cadena sí cuenta aunque no sea un estilo (puede terminar en uno).
+    expect(reglas(auditar({ js: "const c = '#fff';" }))).toEqual(['R3']);
   });
 
   it('R4: un componente que usa un primitivo en vez de un significado', () => {
