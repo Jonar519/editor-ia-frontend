@@ -5,11 +5,17 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import { listaPrecache, versionDe } from './scripts/sw-precache.mjs';
 
+// CUADERNO_API (opcional): otro backend local para pruebas manuales, por ejemplo uno contra la base de
+// PRUEBAS en el puerto 4201. Por defecto, el de desarrollo. Solo se acepta 127.0.0.1 (nunca un servidor
+// remoto: la cookie de refresco viajaría a otro lado).
+const api = process.env.CUADERNO_API ?? 'http://127.0.0.1:4200';
+if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(api)) throw new Error('CUADERNO_API debe ser http://127.0.0.1:<puerto>');
+
 const servidor = {
   host: '127.0.0.1',
   port: 5175,
   strictPort: true,
-  proxy: { '/api': { target: 'http://127.0.0.1:4200', changeOrigin: false } },
+  proxy: { '/api': { target: api, changeOrigin: false } },
 };
 
 /**
