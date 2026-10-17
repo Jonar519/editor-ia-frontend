@@ -64,7 +64,8 @@ async function api(page, ruta, responder) {
  * @param {Page} page @param {Rol} rol @param {Record<string, unknown>} [extra]
  */
 async function conSesion(page, rol, extra = {}) {
-  const estado = { perfil: perfil(rol, extra) };
+  // Record: las pruebas cambian campos del perfil (por ejemplo, avatar de null a un objeto).
+  const estado = { perfil: /** @type {Record<string, unknown>} */ (perfil(rol, extra)) };
   await api(page, '/auth/refresco', (r) => json(r, { accessToken: `token-ficticio-${rol}`, expiraEn: Math.floor(Date.now() / 1000) + 900, usuario: usuario(rol) }));
   const cuenta = await api(page, '/cuenta', (r) => {
     const req = r.request();
@@ -263,8 +264,10 @@ test.describe('cambiar el correo', () => {
     await page.getByLabel('Correo nuevo').fill('leo.nuevo@example.com');
     await page.getByLabel('Tu contraseña actual').fill('una frase larga de prueba');
     await page.getByRole('button', { name: 'Enviar el enlace' }).click();
-    await expect(page.getByText(/Listo: Si la dirección se puede usar, te enviamos un enlace/)).toBeVisible();
-    await expect(page.getByText(/Tu correo actual \(leo@example\.com\) sigue funcionando/)).toBeVisible();
+    // Acotado a <main>: la región viva #anuncios repite el mismo texto 50 ms después.
+    const main = page.locator('main');
+    await expect(main.getByText(/Listo: Si la dirección se puede usar, te enviamos un enlace/)).toBeVisible();
+    await expect(main.getByText(/Tu correo actual \(leo@example\.com\) sigue funcionando/)).toBeVisible();
     expect(pedido[0]?.cuerpo).toEqual({ correoNuevo: 'leo.nuevo@example.com', contrasena: 'una frase larga de prueba' });
     await expect(page.getByLabel('Tu contraseña actual')).toHaveValue('');
   });
