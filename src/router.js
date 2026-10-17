@@ -76,6 +76,25 @@ export function decidir(camino, rutas, sesion) {
   return grupos.includes(r.ruta.grupo) ? { tipo: 'vista', ...r } : { tipo: 'sin_permiso', ruta: r.ruta };
 }
 
+/**
+ * Al cambiar la sesión, ¿hay que redibujar? NO si se sigue mostrando la MISMA vista: completar una
+ * invitación abre la sesión justo cuando la vista muestra los códigos de respaldo, que se muestran una
+ * sola vez; redibujar los borraría. Tampoco si la vista mostrada es PÚBLICA y lo sigue siendo: un cambio
+ * de sesión no puede quitarle el acceso, y esas vistas borran el token de la URL (el patrón cambia de
+ * "/recuperar/:token" a "/recuperar") justo antes de cambiar la sesión. SÍ si cambia lo que corresponde
+ * mostrar (por ejemplo, la sesión terminó y la sección es protegida).
+ * @param {{ tipo: Decision['tipo'], patron?: string, grupo?: string } | null} mostrada
+ * @param {Decision} nueva
+ */
+export function debeRedibujar(mostrada, nueva) {
+  if (!mostrada) return true;
+  if (nueva.tipo === 'vista' && mostrada.tipo === 'vista') {
+    if (mostrada.grupo === 'publico' && nueva.ruta.grupo === 'publico') return false;
+    return mostrada.patron !== nueva.ruta.patron;
+  }
+  return true;
+}
+
 // ─── DOM ──────────────────────────────────────────────────────────────────────────
 
 /** Vistas que no se cargan aparte: tienen que funcionar aunque falle la red. */
@@ -93,13 +112,17 @@ const vistaSinPermiso = () =>
 
 /**
  * Arranca el router. Devuelve `navegar` para volver a evaluar la ruta actual (por ejemplo, cuando la
- * sesión cambia) y `listo`, la primera navegación.
- * @param {{ rutas: Ruta[], raiz: HTMLElement, sesion: () => Sesion, ventana?: Window }} o
- * @returns {{ navegar: () => Promise<void>, listo: Promise<void> }}
+ * sesión cambia), `reevaluar` (lo mismo, pero sin redibujar si la vista sigue siendo la misma) y
+ * `listo`, la primera navegación. `alMandarAEntrar` recibe el camino protegido que se quiso abrir, para
+ * volver a él después de entrar.
+ * @param {{ rutas: Ruta[], raiz: HTMLElement, sesion: () => Sesion, ventana?: Window, alMandarAEntrar?: (camino: string) => void }} o
+ * @returns {{ navegar: () => Promise<void>, reevaluar: () => Promise<void>, listo: Promise<void> }}
  */
 export function iniciarRouter(o) {
   const w = o.ventana ?? window;
   let turno = 0;
+  /** @type {{ tipo: Decision['tipo'], patron?: string, grupo?: string } | null} */
+  let mostrada = null;
 
   /** Coloca el contenido y lleva el foco a su título. */
   function mostrar(/** @type {HTMLElement} */ contenido, /** @type {string} */ titulo) {
@@ -124,9 +147,11 @@ export function iniciarRouter(o) {
     marcarNavegacion(camino);
     const d = decidir(camino, o.rutas, o.sesion());
     if (d.tipo === 'entrar') {
+      o.alMandarAEntrar?.(camino);
       w.location.replace('#/entrar');
       return;
     }
+    mostrada = d.tipo === 'vista' ? { tipo: d.tipo, patron: d.ruta.patron, grupo: d.ruta.grupo } : { tipo: d.tipo };
     if (d.tipo === 'no_encontrada') return mostrar(vistaNoEncontrada(), 'Página no encontrada');
     if (d.tipo === 'sin_permiso') return mostrar(vistaSinPermiso(), 'Sin permiso');
 
@@ -155,6 +180,14 @@ export function iniciarRouter(o) {
     ev.preventDefault();
     o.raiz.focus();
   });
+  /** Para los cambios de sesión: redibuja solo si cambia lo que corresponde mostrar. */
+  async function reevaluar() {
+    const camino = rutaDelHash(w.location.hash);
+    if (camino === null) return;
+    if (!debeRedibujar(mostrada, decidir(camino, o.rutas, o.sesion()))) return;
+    await navegar();
+  }
+
   w.addEventListener('hashchange', () => void navegar());
-  return { navegar, listo: navegar() };
+  return { navegar, reevaluar, listo: navegar() };
 }
