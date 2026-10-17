@@ -18,9 +18,23 @@ export const CERROJO_REFRESCO = 'cuaderno-refresco';
 /**
  * @typedef {{ id: string, nombre: string, correo: string, rol: 'admin' | 'editor' | 'lector' }} Usuario
  * @typedef {{ accessToken: string, expiraEn: number, usuario: Usuario }} SesionRespuesta
- * @typedef {{ metodo?: string, cuerpo?: unknown, senal?: AbortSignal, sinSesion?: boolean }} OpcionesSolicitud
+ * @typedef {{ metodo?: string, cuerpo?: unknown, binario?: Blob, comoArchivo?: boolean, senal?: AbortSignal, sinSesion?: boolean }} OpcionesSolicitud
+ *   cuerpo: se manda como JSON. binario: se manda TAL CUAL con su tipo (el avatar). comoArchivo: la
+ *   respuesta se devuelve como Archivo (blob y nombre del Content-Disposition), no como JSON.
+ * @typedef {{ blob: Blob, nombre: string | null }} Archivo
  * @typedef {{ request: (nombre: string, fn: () => Promise<unknown>) => Promise<unknown> }} Cerrojos
  */
+
+/**
+ * Nombre de archivo de un Content-Disposition ("attachment; filename=\"x.json\""). Solo un nombre simple:
+ * sin rutas ni caracteres de control (el navegador igual lo limpia, pero no se confía en eso).
+ * @param {string | null} cabecera
+ */
+export function nombreDeArchivo(cabecera) {
+  const m = /filename="([^"/\\]+)"/.exec(cabecera ?? '');
+  const nombre = m?.[1];
+  return nombre && /^[\w.-]{1,100}$/.test(nombre) && !nombre.startsWith('.') ? nombre : null;
+}
 
 /**
  * @param {{ fetch?: typeof fetch, base?: string, ahora?: () => number, cerrojos?: Cerrojos | null, tiempoMaximoMs?: number }} [o]
@@ -147,14 +161,18 @@ export function crearClienteApi(o = {}) {
     /** @param {boolean} reintentar */
     const intento = async (reintentar) => {
       /** @type {Record<string, string>} */
-      const cabeceras = { accept: 'application/json' };
-      if (op.cuerpo !== undefined) cabeceras['content-type'] = 'application/json';
+      const cabeceras = { accept: op.comoArchivo ? '*/*' : 'application/json' };
+      /** @type {BodyInit | undefined} */
+      let cuerpo;
+      if (op.binario) {
+        cabeceras['content-type'] = op.binario.type;
+        cuerpo = op.binario;
+      } else if (op.cuerpo !== undefined) {
+        cabeceras['content-type'] = 'application/json';
+        cuerpo = JSON.stringify(op.cuerpo);
+      }
       if (conSesion && acceso) cabeceras.authorization = `Bearer ${acceso}`;
-      const r = await enviar(
-        ruta,
-        { method: op.metodo ?? 'GET', headers: cabeceras, body: op.cuerpo === undefined ? undefined : JSON.stringify(op.cuerpo) },
-        op.senal,
-      );
+      const r = await enviar(ruta, { method: op.metodo ?? 'GET', headers: cabeceras, body: cuerpo }, op.senal);
       if (r.status === 401 && conSesion && reintentar) {
         const err = await errorDe(r);
         if (err.codigo !== 'no_autenticado') throw err;
@@ -168,6 +186,7 @@ export function crearClienteApi(o = {}) {
         if (r.status === 401 && conSesion) olvidarSesion();
         throw err;
       }
+      if (op.comoArchivo) return /** @type {Archivo} */ ({ blob: await r.blob(), nombre: nombreDeArchivo(r.headers.get('content-disposition')) });
       return r.json();
     };
     return intento(true);

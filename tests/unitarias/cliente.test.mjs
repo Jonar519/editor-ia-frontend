@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CERROJO_REFRESCO, crearClienteApi } from '../../src/api/cliente.js';
+import { CERROJO_REFRESCO, crearClienteApi, nombreDeArchivo } from '../../src/api/cliente.js';
 import { ErrorApi, mensajeParaPersona } from '../../src/api/errores.js';
 
 const AHORA = 1_800_000_000_000;
@@ -71,6 +71,42 @@ describe('token solo en memoria y cabeceras', () => {
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/^\s*\/\/.*$/gm, '');
       expect(codigo, a.name).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/);
+    }
+  });
+});
+
+describe('cuerpo binario y respuesta como archivo (avatar y exportación)', () => {
+  it('binario: el blob va TAL CUAL con su tipo (no como JSON) y con el token', async () => {
+    const { f, llamadas } = falso(() => resp({ ancho: 1, alto: 1 }));
+    const api = nuevo(f);
+    api.establecerSesion(sesion('tok-A'));
+    const imagen = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: 'image/png' });
+    await api.solicitar('/cuenta/avatar', { metodo: 'PUT', binario: imagen });
+    expect(llamadas[0]?.cuerpo).toBe(imagen);
+    expect(llamadas[0]?.cabeceras['content-type']).toBe('image/png');
+    expect(llamadas[0]?.cabeceras.authorization).toBe('Bearer tok-A');
+  });
+
+  it('comoArchivo: devuelve el blob y el nombre del Content-Disposition', async () => {
+    const { f, llamadas } = falso(() => resp({ formato: 'x' }, 200, { 'content-disposition': 'attachment; filename="cuaderno-datos-2026-10-17.json"' }));
+    const api = nuevo(f);
+    api.establecerSesion(sesion('tok-A'));
+    const a = await api.solicitar('/cuenta/exportacion', { metodo: 'POST', cuerpo: { contrasena: 'x' }, comoArchivo: true });
+    expect(a.nombre).toBe('cuaderno-datos-2026-10-17.json');
+    expect(await a.blob.text()).toBe('{"formato":"x"}');
+    expect(llamadas[0]?.cabeceras.accept).toBe('*/*');
+  });
+
+  it('comoArchivo con error: se normaliza igual que siempre (no devuelve el cuerpo del error como archivo)', async () => {
+    const api = nuevo(falso(() => error(403, 'contrasena_incorrecta')).f);
+    api.establecerSesion(sesion('tok-A'));
+    await expect(api.solicitar('/cuenta/exportacion', { metodo: 'POST', cuerpo: { contrasena: 'x' }, comoArchivo: true })).rejects.toMatchObject({ codigo: 'contrasena_incorrecta' });
+  });
+
+  it('nombre de archivo: solo un nombre simple; nunca una ruta, oculto o con caracteres raros', () => {
+    expect(nombreDeArchivo('attachment; filename="datos.json"')).toBe('datos.json');
+    for (const malo of ['attachment; filename="../x.json"', 'attachment; filename="a/b.json"', 'attachment; filename="a\\b.json"', 'attachment; filename=".bashrc"', 'attachment; filename="a b.json"', 'attachment', '', null]) {
+      expect(nombreDeArchivo(malo)).toBeNull();
     }
   });
 });
