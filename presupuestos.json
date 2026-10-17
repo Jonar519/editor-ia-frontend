@@ -1,6 +1,6 @@
 {
   "descripcion": "Topes del build en KiB con gzip. Los propone el equipo y los CONFIRMA POR ESCRITO la dueña o dueño del proyecto. Un tope en null está pendiente: scripts/presupuestos.mjs mide e informa, pero no falla por él. Con un número, el build falla si se pasa. Nunca se sube un tope para que el build pase.",
-  "estado": "topes confirmados por escrito al cerrar el bloque H1 (decisión C); diferidas medidas, topes pendientes de activar",
+  "estado": "topes confirmados por escrito al cerrar el bloque H1 (decisión C); diferidas highlight y lenguaje confirmadas al cerrar H2; KaTeX pendiente (bloque O)",
   "roles": {
     "publico": ["publico"],
     "lector": ["publico", "lector"],
@@ -17,6 +17,6 @@
     "jsPorRol": { "publico": 40, "lector": 140, "editor": 210, "admin": 225 },
     "maxChunkJs": 160,
     "cssTotal": 30,
-    "diferidas": { "highlight": null, "katex": null, "lenguaje": null }
+    "diferidas": { "highlight": 60, "katex": null, "lenguaje": 35 }
   }
 }
