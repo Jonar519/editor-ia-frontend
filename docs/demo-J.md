@@ -34,7 +34,7 @@ Abre `http://127.0.0.1:5175`, entra con Marta y presiona **Tu cuenta**.
 
 **Qué debes ver:** el correo, los permisos ("Administración"), "Verificación en dos pasos: Activa", la fecha de creación y, arriba, la navegación de la cuenta con **Perfil** marcado.
 
-En **Teléfono** escribe `55 1234 5678` y presiona **Guardar los cambios**.
+En **Teléfono** escribe `555 010 0123` y presiona **Guardar los cambios**.
 
 **Qué debes ver:** "Error: Escríbelo en formato internacional..." en el campo, sin llamar al servidor.
 

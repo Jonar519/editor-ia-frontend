@@ -49,7 +49,7 @@ function formulario(p) {
     tipo: 'tel',
     autocompletar: 'tel',
     requerido: false,
-    ayuda: 'En formato internacional, con + y el código del país: +52 55 1234 5678. Déjalo vacío para quitarlo.',
+    ayuda: 'En formato internacional, con + y el código del país: +1 555 010 0123. Déjalo vacío para quitarlo.',
     atributos: { value: p.telefono ?? undefined },
   });
   const boton = h('button', { class: 'boton boton-primario', type: 'submit' }, 'Guardar los cambios');

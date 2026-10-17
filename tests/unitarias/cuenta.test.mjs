@@ -28,7 +28,7 @@ describe('perfil: validación previa', () => {
   });
 
   it('teléfono: E.164 (+ y 7 a 15 dígitos, sin 0 inicial); se aceptan separadores; vacío lo quita', () => {
-    expect(normalizarTelefono('+52 55 1234-5678')).toEqual({ valor: '+525512345678' });
+    expect(normalizarTelefono('+1 555 010-0123')).toEqual({ valor: '+15550100123' });
     expect(normalizarTelefono('+1 (555) 010.0000')).toEqual({ valor: '+15550100000' });
     expect(normalizarTelefono('  ')).toEqual({ valor: null });
     expect(normalizarTelefono('+1234567')).toEqual({ valor: '+1234567' }); // 7 dígitos
@@ -36,8 +36,8 @@ describe('perfil: validación previa', () => {
     expect(normalizarTelefono(`+1${'2'.repeat(14)}`)).toHaveProperty('valor'); // 15
     expect(normalizarTelefono(`+1${'2'.repeat(15)}`)).toHaveProperty('problema'); // 16
     expect(normalizarTelefono('+0123456789')).toHaveProperty('problema');
-    expect(normalizarTelefono('5512345678')).toHaveProperty('problema'); // sin +
-    expect(normalizarTelefono('+52 55 abc')).toHaveProperty('problema');
+    expect(normalizarTelefono('5550100123')).toHaveProperty('problema'); // sin +
+    expect(normalizarTelefono('+1 555 abc')).toHaveProperty('problema');
   });
 });
 

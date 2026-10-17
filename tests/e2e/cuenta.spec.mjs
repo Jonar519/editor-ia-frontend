@@ -146,17 +146,17 @@ test.describe('perfil', () => {
     await page.goto('/#/cuenta');
     await expect(page.getByText('leo@example.com')).toBeVisible();
     await expect(page.getByText('Sin foto.')).toBeVisible();
-    await page.getByLabel('Teléfono (opcional)').fill('+52 55 1234-5678');
+    await page.getByLabel('Teléfono (opcional)').fill('+1 555 010-0123');
     await page.getByRole('button', { name: 'Guardar los cambios' }).click();
     await expect(page.getByText('Listo: Guardamos tus cambios.')).toBeVisible();
-    expect(cuenta.filter((c) => c.metodo === 'PATCH').map((c) => c.cuerpo)).toEqual([{ telefono: '+525512345678' }]);
-    await expect(page.getByLabel('Teléfono (opcional)')).toHaveValue('+525512345678');
+    expect(cuenta.filter((c) => c.metodo === 'PATCH').map((c) => c.cuerpo)).toEqual([{ telefono: '+15550100123' }]);
+    await expect(page.getByLabel('Teléfono (opcional)')).toHaveValue('+15550100123');
   });
 
   test('un teléfono sin formato internacional se marca en el campo, sin llamar al servidor', async ({ page }) => {
     const { cuenta } = await conSesion(page, 'lector');
     await page.goto('/#/cuenta');
-    await page.getByLabel('Teléfono (opcional)').fill('55 1234 5678');
+    await page.getByLabel('Teléfono (opcional)').fill('555 010 0123');
     await page.getByRole('button', { name: 'Guardar los cambios' }).click();
     await expect(page.getByLabel('Teléfono (opcional)')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.getByLabel('Teléfono (opcional)')).toBeFocused();

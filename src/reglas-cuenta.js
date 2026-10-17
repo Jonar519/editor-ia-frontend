@@ -24,7 +24,7 @@ export function problemaNombre(texto) {
 export function normalizarTelefono(texto) {
   const t = texto.replace(/[\s().-]+/g, '');
   if (t === '') return { valor: null };
-  if (!/^\+[1-9]\d{6,14}$/.test(t)) return { problema: 'Escríbelo en formato internacional, con + y el código del país: +52 55 1234 5678.' };
+  if (!/^\+[1-9]\d{6,14}$/.test(t)) return { problema: 'Escríbelo en formato internacional, con + y el código del país: +1 555 010 0123.' };
   return { valor: t };
 }
 
