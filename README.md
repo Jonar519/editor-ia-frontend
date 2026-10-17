@@ -19,7 +19,32 @@ npm ci
 scripts\dev.bat
 ```
 
-Abre `http://127.0.0.1:5175`. Las llamadas a `/api` van por proxy al backend en `127.0.0.1:4200`: mismo origen, así que la cookie de refresco (SameSite=Strict) viaja sin CORS.
+Abre `http://127.0.0.1:5175`. Las llamadas a `/api` van por proxy al backend en `127.0.0.1:4200`: mismo origen, así que la cookie de refresco (SameSite=Strict) viaja sin CORS. El backend no usa CORS.
+
+**Valores del backend que el inicio de sesión necesita en desarrollo** (en su `.env`; ninguno es secreto). Están comprobados en Chrome 152 contra un backend real con la base de **pruebas**:
+
+| Variable | Valor en desarrollo | Por qué |
+|---|---|---|
+| `APP_URL` | `http://127.0.0.1:5175` | El backend compara el `Origin` del refresco con este origen. Tiene que ser exactamente el del frontend: mismo esquema, `127.0.0.1` (no `localhost`) y el puerto 5175. |
+| `COOKIE_SECURE` | `true` | Los navegadores aceptan una cookie `Secure` sobre `http://127.0.0.1`. En producción es obligatoria. |
+
+**Otro backend local (opcional).** `CUADERNO_API=http://127.0.0.1:<puerto>` apunta el proxy a otro backend, por ejemplo uno contra la base de pruebas en el puerto 4201. Solo se acepta `127.0.0.1`.
+
+## Pantallas de entrada
+
+| Ruta | Pantalla |
+|---|---|
+| `#/` | Hero: qué es Cuaderno y una sola acción, Entrar. Con sesión, lleva a `#/documentos`. |
+| `#/entrar` | Correo y contraseña. Si la cuenta usa MFA, segundo paso con código de la app o de respaldo. Después vuelve a la sección protegida que se quiso abrir. |
+| `#/recuperar` y `#/recuperar/<token>` | Pedir el enlace (misma respuesta exista o no el correo) y elegir una contraseña nueva (cierra todas las sesiones). |
+| `#/invitacion/<token>` | Crear la cuenta. Un admin configura MFA y recibe 10 códigos de respaldo que se muestran una sola vez. |
+| `#/correo/<token>` | Confirmar el correo nuevo con un botón: no se confirma solo al abrir el enlace. |
+
+**El token de un enlace se borra de la URL** con `history.replaceState` en cuanto se lee, antes de cualquier petición y aunque no sea válido. Desde ahí vive solo en memoria y viaja en el cuerpo de la petición.
+
+**Al cambiar la sesión no se redibuja la vista si sigue siendo la misma o si es pública:** completar una invitación abre la sesión justo cuando se muestran los códigos de respaldo.
+
+**Sin QR para el MFA por ahora:** el secreto se escribe a mano o se abre con el enlace `otpauth://`. Dibujar un QR exige una librería o una implementación propia, que no están aprobadas.
 
 ## Scripts
 
