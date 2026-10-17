@@ -108,6 +108,39 @@ export function controlEnvio(form, boton) {
   };
 }
 
+/**
+ * Lista de opciones con etiqueta visible (por ejemplo, el rol de una invitación).
+ * @param {{ etiqueta: string, nombre: string, opciones: [string, string][], ayuda?: string }} o  opciones: [valor, texto]
+ * @returns {{ contenedor: HTMLElement, select: HTMLSelectElement, valor: () => string }}
+ */
+export function campoSeleccion(o) {
+  const id = idNuevo(o.nombre);
+  const ayuda = o.ayuda ? h('p', { id: `${id}-ayuda`, class: 'ayuda' }, o.ayuda) : null;
+  const select = h('select', { id, name: o.nombre, 'aria-describedby': ayuda ? `${id}-ayuda` : undefined }, ...o.opciones.map(([v, t]) => h('option', { value: v }, t)));
+  return { contenedor: h('div', { class: 'campo' }, h('label', { for: id }, o.etiqueta), select, ayuda), select, valor: () => select.value };
+}
+
+/**
+ * Errores de validación del servidor (400 "validacion", detalles [{ ruta, mensaje }]) en su campo.
+ * Devuelve true si marcó alguno (y pone el foco en el primero).
+ * @param {unknown} err
+ * @param {Record<string, Campo>} campos  por ruta del cuerpo ("correo", "telefono"...)
+ */
+export function erroresEnCampos(err, campos) {
+  const e = /** @type {{ codigo?: unknown, detalles?: unknown }} */ (err ?? {});
+  if (e.codigo !== 'validacion' || !Array.isArray(e.detalles)) return false;
+  /** @type {Campo | null} */
+  let primero = null;
+  for (const d of e.detalles) {
+    const c = d && typeof d.ruta === 'string' ? campos[d.ruta] : undefined;
+    if (!c || typeof d.mensaje !== 'string') continue;
+    c.error(`${d.mensaje.charAt(0).toUpperCase()}${d.mensaje.slice(1)}.`);
+    primero ??= c;
+  }
+  primero?.input.focus();
+  return primero !== null;
+}
+
 /** Detalles de un error del API que sean una lista de textos (por ejemplo, contrasena_debil). */
 export function detallesComoLista(/** @type {unknown} */ err) {
   const d = /** @type {{ detalles?: unknown }} */ (err ?? {}).detalles;

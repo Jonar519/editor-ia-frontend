@@ -449,6 +449,141 @@
       "reemplazo": "const c = texto.replace(/[\\s-]+/g, '');",
       "comando": "test",
       "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H51",
+      "regla": "Avatar: el recorte nunca sale de la imagen (la posición horizontal se limita a 0..1)",
+      "archivo": "src/reglas-cuenta.js",
+      "buscar": "sx: Math.round((ancho - lado) * entre(p.x, 0, 1))",
+      "reemplazo": "sx: Math.round((ancho - lado) * p.x)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H52",
+      "regla": "Avatar: el zoom se limita a 1..ZOOM_MAXIMO (con menos de 1 el cuadrado sería más grande que la imagen)",
+      "archivo": "src/reglas-cuenta.js",
+      "buscar": "/ entre(p.zoom, 1, ZOOM_MAXIMO)",
+      "reemplazo": "/ p.zoom",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H53",
+      "regla": "Avatar: un PNG se sube como PNG (en JPEG la transparencia queda negra)",
+      "archivo": "src/reglas-cuenta.js",
+      "buscar": "if (tipoOrigen === 'image/png') return 'image/png';",
+      "reemplazo": "if (tipoOrigen === 'image/png') return 'image/jpeg';",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H54",
+      "regla": "Teléfono: E.164 con 7 a 15 dígitos (lo mismo que la base)",
+      "archivo": "src/reglas-cuenta.js",
+      "buscar": "if (!/^\\+[1-9]\\d{6,14}$/.test(t))",
+      "reemplazo": "if (!/^\\+[1-9]\\d{5,14}$/.test(t))",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H55",
+      "regla": "Nombre: el máximo de 80 se cuenta sin los espacios de los extremos (como el backend, que hace trim)",
+      "archivo": "src/reglas-cuenta.js",
+      "buscar": "const n = texto.trim();",
+      "reemplazo": "const n = texto;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H56",
+      "regla": "Eliminar la cuenta: de la lista del 409 solo se muestran entradas con la forma esperada",
+      "archivo": "src/reglas-cuenta.js",
+      "buscar": "(d.tipo === 'documento' || d.tipo === 'espacio') && typeof d.id === 'string'",
+      "reemplazo": "typeof d.id === 'string'",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H57",
+      "regla": "Invitaciones: la página anterior nunca pide un \"desde\" negativo",
+      "archivo": "src/reglas-cuenta.js",
+      "buscar": "anterior: p.desde > 0 ? Math.max(0, p.desde - p.limite) : null",
+      "reemplazo": "anterior: p.desde > 0 ? p.desde - p.limite : null",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H58",
+      "regla": "Descarga: el nombre de archivo del servidor no puede ser oculto (.algo)",
+      "archivo": "src/api/cliente.js",
+      "buscar": "&& !nombre.startsWith('.')",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H59",
+      "regla": "Descarga: el nombre de archivo del servidor solo admite letras, dígitos, punto, guion y guion bajo",
+      "archivo": "src/api/cliente.js",
+      "buscar": "/^[\\w.-]{1,100}$/.test(nombre)",
+      "reemplazo": "/^.{1,100}$/.test(nombre)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H60",
+      "regla": "Cliente: un cuerpo binario (el avatar) viaja con SU tipo (image/png o image/jpeg)",
+      "archivo": "src/api/cliente.js",
+      "buscar": "cabeceras['content-type'] = op.binario.type;",
+      "reemplazo": "cabeceras['content-type'] = 'application/octet-stream';",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "H61",
+      "regla": "Estilos: hidden SIEMPRE oculta (una clase con display no le gana)",
+      "archivo": "src/estilos/base.css",
+      "buscar": "  display: none !important;",
+      "reemplazo": "  display: none;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H62",
+      "regla": "Navegación: la sección activa se compara por segmento completo (/cuenta-eliminada no es /cuenta)",
+      "archivo": "src/router.js",
+      "buscar": "camino.startsWith(`${seccion}/`)",
+      "reemplazo": "camino.startsWith(seccion)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H63",
+      "regla": "Rutas: la despedida después de eliminar la cuenta es pública (la sesión ya no existe)",
+      "archivo": "src/rutas.js",
+      "buscar": "{ patron: '/cuenta-eliminada', grupo: 'publico'",
+      "reemplazo": "{ patron: '/cuenta-eliminada', grupo: 'lector'",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "H64",
+      "regla": "Presupuestos: la medida por pantalla no vuelve a contar lo que ya trajo la primera carga",
+      "archivo": "scripts/lib/presupuestos.mjs",
+      "buscar": ".filter((a) => !primera.has(a));",
+      "reemplazo": ".filter(() => true);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presupuestos.test.mjs"]
+    },
+    {
+      "id": "H65",
+      "regla": "Formularios: solo un 400 \"validacion\" del servidor marca campos (otro error va al resumen)",
+      "archivo": "src/componentes/formulario.js",
+      "buscar": "if (e.codigo !== 'validacion' || !Array.isArray(e.detalles)) return false;",
+      "reemplazo": "if (!Array.isArray(e.detalles)) return false;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cuenta.test.mjs"]
     }
   ]
 }

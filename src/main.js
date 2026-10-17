@@ -13,11 +13,15 @@ import { registrarServiceWorker } from './sw/registrar.js';
 const raiz = document.getElementById('contenido');
 if (!raiz) throw new Error('falta <main id="contenido">');
 
-/** La navegación muestra "Tu cuenta" y "Salir" con sesión, y "Entrar" sin ella. */
+/**
+ * La navegación muestra "Tu cuenta" y "Salir" con sesión, "Entrar" sin ella, y "Administración" solo a
+ * ese rol. Ocultar un enlace NO es la protección: el router y el backend exigen el rol igual.
+ */
 function actualizarNavegacion() {
-  const con = Boolean(api.usuario());
-  for (const el of document.querySelectorAll('[data-con-sesion]')) /** @type {HTMLElement} */ (el).hidden = !con;
-  for (const el of document.querySelectorAll('[data-sin-sesion]')) /** @type {HTMLElement} */ (el).hidden = con;
+  const u = api.usuario();
+  for (const el of document.querySelectorAll('[data-con-sesion]')) /** @type {HTMLElement} */ (el).hidden = !u;
+  for (const el of document.querySelectorAll('[data-sin-sesion]')) /** @type {HTMLElement} */ (el).hidden = Boolean(u);
+  for (const el of document.querySelectorAll('[data-solo-rol]')) /** @type {HTMLElement} */ (el).hidden = u?.rol !== el.getAttribute('data-solo-rol');
 }
 
 document.querySelector('[data-salir]')?.addEventListener('click', () => {

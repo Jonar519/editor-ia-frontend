@@ -10,6 +10,12 @@
   box-sizing: border-box;
 }
 
+/* El atributo hidden SIEMPRE oculta: sin esto, una clase con display (por ejemplo .boton, inline-flex)
+   le gana a la regla del navegador y el elemento "oculto" se sigue viendo y se puede pulsar. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   font-family: var(--fuente-texto);
   font-size: 100%;
@@ -453,4 +459,111 @@ kbd {
   flex-wrap: wrap;
   gap: var(--espacio-3);
   align-items: center;
+}
+
+/* ─── Cuenta y administración (bloque J) ──────────────────────────────────── */
+
+/* Títulos y preguntas que reciben el foco por programa (tabindex="-1"): no son controles. */
+h2[tabindex='-1']:focus,
+.confirmar p[tabindex='-1']:focus {
+  outline: none;
+}
+
+.tarjeta + .tarjeta,
+.datos + .tarjeta,
+.aviso + .tarjeta {
+  margin-top: var(--espacio-6);
+}
+
+/* Secciones de "Tu cuenta". La actual se marca con aria-current y con peso, no solo con color. */
+.subnav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2) var(--espacio-4);
+  margin: 0 0 var(--espacio-6);
+  padding: 0 0 var(--espacio-3);
+  list-style: none;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.subnav a[aria-current='page'] {
+  font-weight: 700;
+  text-decoration-thickness: 0.15em;
+}
+
+.campo select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--espacio-2) var(--espacio-3);
+  font: inherit;
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: var(--radio);
+}
+
+/* Deslizadores y archivo: sin el borde de un campo de texto. */
+.campo input[type='range'],
+.campo input[type='file'] {
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+}
+
+/* Acción destructiva (eliminar, cancelar, quitar): el borde lo dice además del texto del botón. */
+.boton-peligro {
+  border-width: 2px;
+  border-color: var(--color-peligro);
+}
+
+.avatar {
+  display: block;
+  width: 8rem;
+  height: 8rem;
+  margin-bottom: var(--espacio-2);
+  border-radius: 50%;
+  border: 1px solid var(--color-borde);
+  object-fit: cover;
+}
+
+.recorte {
+  display: block;
+  width: 16rem;
+  max-width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: var(--espacio-4);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+}
+
+.filas {
+  margin: 0 0 var(--espacio-4);
+  padding: 0;
+  list-style: none;
+}
+
+.fila {
+  padding: var(--espacio-4) 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.fila-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+  align-items: center;
+  font-weight: 700;
+}
+
+/* "Este dispositivo": la etiqueta es texto; el borde es decorativo. */
+.insignia {
+  padding: 0 var(--espacio-2);
+  font-weight: 400;
+  font-size: var(--tamano-pequeno);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
 }

@@ -28,8 +28,16 @@ export const RUTAS = [
   { patron: '/invitacion/:token', grupo: 'publico', titulo: 'Crear tu cuenta', cargar: () => import('./vistas/publico/invitacion.js') },
   { patron: '/correo', grupo: 'publico', titulo: 'Confirmar tu nuevo correo', cargar: () => import('./vistas/publico/correo.js') },
   { patron: '/correo/:token', grupo: 'publico', titulo: 'Confirmar tu nuevo correo', cargar: () => import('./vistas/publico/correo.js') },
+  { patron: '/cuenta-eliminada', grupo: 'publico', titulo: 'Cuenta eliminada', cargar: () => import('./vistas/publico/cuenta-eliminada.js') },
   { patron: '/documentos', grupo: 'lector', titulo: 'Documentos', cargar: () => import('./vistas/lector/documentos.js') },
+  // "Tu cuenta": todos los roles. Cada sección es su propio archivo (se mide por separado).
   { patron: '/cuenta', grupo: 'lector', titulo: 'Tu cuenta', cargar: () => import('./vistas/lector/cuenta.js') },
+  { patron: '/cuenta/foto', grupo: 'lector', titulo: 'Foto de perfil', cargar: () => import('./vistas/lector/foto.js') },
+  { patron: '/cuenta/correo', grupo: 'lector', titulo: 'Cambiar el correo', cargar: () => import('./vistas/lector/cambiar-correo.js') },
+  { patron: '/cuenta/contrasena', grupo: 'lector', titulo: 'Cambiar la contraseña', cargar: () => import('./vistas/lector/contrasena.js') },
+  { patron: '/cuenta/dos-pasos', grupo: 'lector', titulo: 'Verificación en dos pasos', cargar: () => import('./vistas/lector/dos-pasos.js') },
+  { patron: '/cuenta/sesiones', grupo: 'lector', titulo: 'Sesiones abiertas', cargar: () => import('./vistas/lector/sesiones.js') },
+  { patron: '/cuenta/datos', grupo: 'lector', titulo: 'Tus datos', cargar: () => import('./vistas/lector/datos.js') },
   { patron: '/documentos/:id/editar', grupo: 'editor', titulo: 'Editar documento', cargar: () => import('./vistas/editor/editar.js') },
   { patron: '/admin', grupo: 'admin', titulo: 'Administración', cargar: () => import('./vistas/admin/panel.js') },
 ];

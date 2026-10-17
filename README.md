@@ -46,6 +46,26 @@ Abre `http://127.0.0.1:5175`. Las llamadas a `/api` van por proxy al backend en 
 
 **Sin QR para el MFA por ahora:** el secreto se escribe a mano o se abre con el enlace `otpauth://`. Dibujar un QR exige una librería o una implementación propia, que no están aprobadas.
 
+## Tu cuenta y administración
+
+Cada sección es su propia ruta (y su propio archivo, que se mide aparte). Todas las de la cuenta son del grupo lector: las abre cualquier rol.
+
+| Ruta | Pantalla |
+|---|---|
+| `#/cuenta` | Perfil: lo que se ve de la cuenta y el formulario de nombre y teléfono (E.164; vacío lo quita). Se manda solo lo que cambió. |
+| `#/cuenta/foto` | Foto: se recorta en un cuadrado **en el navegador** (zoom y posición con deslizadores o arrastrando) y se sube ya recortada, a 512 px como máximo y sin agrandar. Volver a codificarla con un canvas descarta los metadatos de la cámara; el servidor igual los limpia. Un PNG sigue siendo PNG. |
+| `#/cuenta/correo` | Pedir el cambio de correo con la contraseña. El servidor responde siempre lo mismo; el cambio se confirma en `#/correo/<token>`. |
+| `#/cuenta/contrasena` | Cambiar la contraseña: dice cuántas sesiones de otros dispositivos se cerraron. |
+| `#/cuenta/dos-pasos` | Activar la verificación en dos pasos (secreto, primer código, 10 códigos de respaldo una sola vez), generar códigos nuevos y desactivarla. Una cuenta de administración no puede desactivarla. |
+| `#/cuenta/sesiones` | Sesiones abiertas (red truncada, ubicación aproximada): cerrar una, cerrar las demás o salir de esta. |
+| `#/cuenta/datos` | Descargar los datos (JSON) y eliminar la cuenta. Si es propietaria de algo compartido, el 409 muestra **qué** hay que transferir, con nombres. |
+| `#/cuenta-eliminada` | Despedida pública después de eliminar la cuenta: la sesión se olvida ya en esta vista, sin pasar por Entrar. |
+| `#/admin` | Solo administración: invitar (nombre, correo, permisos), la lista paginada de invitaciones pendientes, reenviar y cancelar con confirmación en la fila. El enlace de invitación **nunca** llega a esta pantalla: solo lo recibe la persona invitada. |
+
+El enlace **Administración** de la navegación se muestra solo a ese rol. Ocultarlo no es la protección: el router y el backend exigen el rol igual.
+
+**`hidden` siempre oculta** (`[hidden] { display: none !important }` en `base.css`). Sin esa regla, una clase con `display` como `.boton` le gana al navegador y un botón "oculto" se sigue viendo y se puede pulsar.
+
 ## Scripts
 
 Todos los `.bat` están en `scripts\` y se pueden ejecutar desde cualquier carpeta.
@@ -117,12 +137,12 @@ Los topes viven en `presupuestos.json`:
 - Con un número, el build falla si se pasa.
 - Nunca se sube un tope para que el build pase.
 
-**Topes aplicados (confirmados por escrito al cerrar H1), en KiB con gzip:**
+**Topes aplicados, en KiB con gzip** (confirmados por escrito al cerrar H1; primera carga y rol público apretados al cerrar I):
 
 | Medida | Tope |
 |---|---|
-| JS de primera carga | 25 |
-| Rol público | 40 |
+| JS de primera carga | 12 |
+| Rol público | 20 |
 | Rol lector | 140 |
 | Rol editor | 210 |
 | Rol admin | 225 |
@@ -133,8 +153,10 @@ Los topes viven en `presupuestos.json`:
 
 - Se miden aparte del JS del rol, con lo que traen **además** de lo que ya cargó quien las pide.
 - Los lenguajes se miden de uno en uno y se compara el mayor.
-- Sus topes (highlight 60, lenguaje 35) están en `null` hasta que se confirmen. KaTeX se decide en el bloque O.
+- Topes aplicados al cerrar H2: highlight 60 y lenguaje 35. KaTeX sigue en `null`: se decide en el bloque O.
 - Mermaid queda fuera: es mejora futura, sin excepción al tope por chunk.
+
+**Por pantalla (informativo, sin tope).** Lo que descarga abrir cada vista justo después de la primera carga: su archivo y sus importaciones estáticas, sin lo que ya trajo la primera carga. Es el peor caso: si antes se abrió otra vista que comparte código, se descarga menos.
 
 ### API y sesión (`src/api/cliente.js`, `src/sesion.js`)
 

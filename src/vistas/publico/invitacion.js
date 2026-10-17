@@ -7,6 +7,7 @@
 import { ErrorApi } from '../../api/errores.js';
 import { conDatos } from '../../componentes/estado.js';
 import { campo, campoContrasena, controlEnvio, detallesComoLista } from '../../componentes/formulario.js';
+import { bloqueSecreto, mostrarCodigos } from '../../componentes/mfa.js';
 import { aviso, h } from '../../dom.js';
 import { api, tomarDestino } from '../../sesion.js';
 import { consumirToken } from '../../token-url.js';
@@ -37,9 +38,6 @@ export function render(params) {
   return seccion;
 }
 
-/** Secreto base32 en grupos de 4 para leerlo y escribirlo sin errores. */
-const enGrupos = (/** @type {string} */ secreto) => secreto.replace(/(.{4})/g, '$1 ').trim();
-
 /**
  * @param {HTMLElement} seccion
  * @param {string} token
@@ -67,8 +65,7 @@ function formulario(seccion, token, inv) {
       zonaMfa.replaceChildren(
         h('h2', {}, 'Verificación en dos pasos'),
         h('p', {}, 'Las cuentas de administración la usan siempre. Agrega esta cuenta en tu app autenticadora (por ejemplo, la de tu teléfono) con este secreto:'),
-        h('p', { class: 'codigo-secreto' }, enGrupos(m.secreto)),
-        h('p', {}, h('a', { href: m.uri }, 'Abrir en la app autenticadora'), h('span', { class: 'suave' }, ' (desde el teléfono)')),
+        ...bloqueSecreto(m),
         codigo.contenedor,
       );
       secretoListo = true;
@@ -114,8 +111,11 @@ function formulario(seccion, token, inv) {
         nueva.ocultar();
         repetir.ocultar();
         api.establecerSesion(r);
-        if (r.codigosRespaldo?.length) mostrarCodigos(seccion, r.codigosRespaldo);
-        else window.location.hash = `#${tomarDestino()}`;
+        const irAlDestino = () => {
+          window.location.hash = `#${tomarDestino()}`;
+        };
+        if (r.codigosRespaldo?.length) mostrarCodigos(seccion, r.codigosRespaldo, { alContinuar: irAlDestino });
+        else irAlDestino();
       } catch (err) {
         envio.listo();
         nueva.ocultar();
@@ -142,54 +142,4 @@ function formulario(seccion, token, inv) {
     h('dl', { class: 'datos' }, h('dt', {}, 'Correo'), h('dd', {}, inv.correo)),
     form,
   );
-}
-
-/**
- * Los 10 códigos de respaldo: se muestran UNA vez. Avisa si se intenta salir sin confirmar que se
- * guardaron.
- * @param {HTMLElement} seccion
- * @param {string[]} codigos
- */
-function mostrarCodigos(seccion, codigos) {
-  const texto = ['Códigos de respaldo de Cuaderno (cada uno sirve una sola vez):', '', ...codigos].join('\n');
-  /** @param {BeforeUnloadEvent} ev */
-  const alSalir = (ev) => {
-    ev.preventDefault();
-  };
-  window.addEventListener('beforeunload', alSalir);
-
-  const copiar = h('button', { class: 'boton', type: 'button' }, 'Copiar');
-  const estadoCopia = h('span', { class: 'suave', role: 'status' });
-  copiar.addEventListener('click', () => {
-    navigator.clipboard.writeText(texto).then(
-      () => {
-        estadoCopia.textContent = 'Copiados.';
-      },
-      () => {
-        estadoCopia.textContent = 'No se pudieron copiar: selecciónalos y cópialos a mano.';
-      },
-    );
-  });
-  const descargar = h('a', { class: 'boton', download: 'cuaderno-codigos-de-respaldo.txt', href: URL.createObjectURL(new Blob([texto], { type: 'text/plain' })) }, 'Descargar .txt');
-
-  const confirmo = h('input', { type: 'checkbox', id: 'codigos-guardados' });
-  const seguir = h('button', { class: 'boton boton-primario', type: 'button', disabled: true }, 'Continuar');
-  confirmo.addEventListener('change', () => {
-    seguir.disabled = !confirmo.checked;
-  });
-  seguir.addEventListener('click', () => {
-    window.removeEventListener('beforeunload', alSalir);
-    URL.revokeObjectURL(descargar.href);
-    window.location.hash = `#${tomarDestino()}`;
-  });
-
-  seccion.replaceChildren(
-    h('h1', { tabindex: '-1' }, 'Guarda tus códigos de respaldo'),
-    aviso('advertencia', 'Se muestran solo esta vez. Si pierdes el teléfono, son la única forma de entrar.'),
-    h('ul', { class: 'codigos-respaldo', 'aria-label': 'Códigos de respaldo' }, ...codigos.map((c) => h('li', {}, c))),
-    h('p', { class: 'acciones' }, copiar, descargar, estadoCopia),
-    h('p', {}, confirmo, h('label', { for: 'codigos-guardados' }, ' Ya los guardé en un lugar seguro')),
-    seguir,
-  );
-  seccion.querySelector('h1')?.focus();
 }

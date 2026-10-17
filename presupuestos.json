@@ -1,6 +1,6 @@
 {
   "descripcion": "Topes del build en KiB con gzip. Los propone el equipo y los CONFIRMA POR ESCRITO la dueña o dueño del proyecto. Un tope en null está pendiente: scripts/presupuestos.mjs mide e informa, pero no falla por él. Con un número, el build falla si se pasa. Nunca se sube un tope para que el build pase.",
-  "estado": "topes confirmados por escrito al cerrar el bloque H1 (decisión C); diferidas highlight y lenguaje confirmadas al cerrar H2; KaTeX pendiente (bloque O)",
+  "estado": "topes confirmados por escrito: H1 (decisión C); primera carga 12 y rol público 20 al cerrar I; diferidas highlight y lenguaje al cerrar H2; KaTeX pendiente (bloque O)",
   "roles": {
     "publico": ["publico"],
     "lector": ["publico", "lector"],
@@ -13,8 +13,8 @@
     "lenguaje": { "patron": "node_modules/@codemirror/(lang-|legacy-modes)", "porChunk": true }
   },
   "topesKiBGzip": {
-    "primeraCargaJs": 25,
-    "jsPorRol": { "publico": 40, "lector": 140, "editor": 210, "admin": 225 },
+    "primeraCargaJs": 12,
+    "jsPorRol": { "publico": 20, "lector": 140, "editor": 210, "admin": 225 },
     "maxChunkJs": 160,
     "cssTotal": 30,
     "diferidas": { "highlight": 60, "katex": null, "lenguaje": 35 }

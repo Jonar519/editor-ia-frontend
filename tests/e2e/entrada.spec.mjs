@@ -99,7 +99,9 @@ test.describe('entrar', () => {
 
   test('sin MFA: entra y vuelve a la sección protegida que se quiso abrir', async ({ page }) => {
     await api(page, '/auth/sesion', (r) => json(r, { ...SESION, usuario: { ...USUARIO, rol: 'lector' } }, 201));
-    await api(page, '/cuenta', (r) => json(r, { ...USUARIO, rol: 'lector', telefono: null, mfaActivo: false }));
+    await api(page, '/cuenta', (r) =>
+      json(r, { ...USUARIO, rol: 'lector', telefono: null, mfaActivo: false, creadaEn: '2026-01-15T12:00:00.000Z', activadaEn: '2026-01-15T12:30:00.000Z', avatar: null, cambioCorreoPendiente: null }),
+    );
     await page.goto('/#/cuenta');
     await expect(page).toHaveURL(/#\/entrar$/);
     await llenarEntrar(page);

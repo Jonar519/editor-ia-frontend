@@ -75,5 +75,8 @@ test('precarga solo el armazón: el código del editor y de administración no s
   await swListo(page);
   const claves = await clavesEnCache(page);
   expect(claves.some((c) => /\/assets\/inicio-/.test(c))).toBe(true);
-  expect(claves.some((c) => /\/assets\/(editar|panel|cuenta|documentos)-/.test(c))).toBe(false);
+  // Nombre EXACTO del chunk (nombre-<hash de 8>.js): "cuenta-eliminada" es pública y SÍ se precarga.
+  expect(claves.some((c) => /\/assets\/cuenta-eliminada-[\w-]{8}\.js$/.test(c))).toBe(true);
+  const protegidas = /\/assets\/(editar|panel|cuenta|documentos|foto|cambiar-correo|contrasena|dos-pasos|sesiones|datos)-[\w-]{8}\.js$/;
+  expect(claves.filter((c) => protegidas.test(c))).toEqual([]);
 });
