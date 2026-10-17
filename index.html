@@ -17,8 +17,9 @@
         <ul>
           <li><a href="#/" data-ruta="/">Inicio</a></li>
           <li><a href="#/documentos" data-ruta="/documentos">Documentos</a></li>
-          <li><a href="#/cuenta" data-ruta="/cuenta">Tu cuenta</a></li>
-          <li><a href="#/entrar" data-ruta="/entrar">Entrar</a></li>
+          <li data-con-sesion hidden><a href="#/cuenta" data-ruta="/cuenta">Tu cuenta</a></li>
+          <li data-sin-sesion><a href="#/entrar" data-ruta="/entrar">Entrar</a></li>
+          <li data-con-sesion hidden><button type="button" class="boton-enlace" data-salir>Salir</button></li>
         </ul>
       </nav>
     </header>

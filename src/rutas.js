@@ -20,6 +20,14 @@ export const GRUPOS_POR_ROL = /** @type {const} */ ({
 export const RUTAS = [
   { patron: '/', grupo: 'publico', titulo: 'Inicio', cargar: () => import('./vistas/publico/inicio.js') },
   { patron: '/entrar', grupo: 'publico', titulo: 'Entrar', cargar: () => import('./vistas/publico/entrar.js') },
+  // Las rutas con token llegan desde un enlace de correo; la vista borra el token de la URL al leerlo y
+  // deja la ruta base (sin token), que también existe.
+  { patron: '/recuperar', grupo: 'publico', titulo: 'Recuperar la contraseña', cargar: () => import('./vistas/publico/recuperar.js') },
+  { patron: '/recuperar/:token', grupo: 'publico', titulo: 'Elegir una contraseña nueva', cargar: () => import('./vistas/publico/recuperar.js') },
+  { patron: '/invitacion', grupo: 'publico', titulo: 'Crear tu cuenta', cargar: () => import('./vistas/publico/invitacion.js') },
+  { patron: '/invitacion/:token', grupo: 'publico', titulo: 'Crear tu cuenta', cargar: () => import('./vistas/publico/invitacion.js') },
+  { patron: '/correo', grupo: 'publico', titulo: 'Confirmar tu nuevo correo', cargar: () => import('./vistas/publico/correo.js') },
+  { patron: '/correo/:token', grupo: 'publico', titulo: 'Confirmar tu nuevo correo', cargar: () => import('./vistas/publico/correo.js') },
   { patron: '/documentos', grupo: 'lector', titulo: 'Documentos', cargar: () => import('./vistas/lector/documentos.js') },
   { patron: '/cuenta', grupo: 'lector', titulo: 'Tu cuenta', cargar: () => import('./vistas/lector/cuenta.js') },
   { patron: '/documentos/:id/editar', grupo: 'editor', titulo: 'Editar documento', cargar: () => import('./vistas/editor/editar.js') },

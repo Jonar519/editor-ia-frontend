@@ -28,6 +28,25 @@ export function h(etiqueta, atributos = {}, ...hijos) {
   return el;
 }
 
+const SVG = 'http://www.w3.org/2000/svg';
+
+/**
+ * Lo mismo que h() para SVG (createElementNS). Sin texto: las ilustraciones son formas.
+ * @param {string} etiqueta
+ * @param {Record<string, string>} [atributos]
+ * @param {...SVGElement} hijos
+ * @returns {SVGElement}
+ */
+export function s(etiqueta, atributos = {}, ...hijos) {
+  const el = /** @type {SVGElement} */ (document.createElementNS(SVG, etiqueta));
+  for (const [nombre, valor] of Object.entries(atributos)) {
+    if (/^on/i.test(nombre)) throw new Error(`atributo de evento no permitido: ${nombre}`);
+    el.setAttribute(nombre, valor);
+  }
+  el.append(...hijos);
+  return el;
+}
+
 /**
  * Aviso de estado. El texto nombra el estado (el color nunca es el único medio).
  * @param {'info' | 'exito' | 'advertencia' | 'error'} tipo
