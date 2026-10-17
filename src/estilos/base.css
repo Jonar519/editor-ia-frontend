@@ -10,6 +10,12 @@
   box-sizing: border-box;
 }
 
+/* El atributo hidden SIEMPRE oculta: sin esto, una clase con display (por ejemplo .boton, inline-flex)
+   le gana a la regla del navegador y el elemento "oculto" se sigue viendo y se puede pulsar. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   font-family: var(--fuente-texto);
   font-size: 100%;
