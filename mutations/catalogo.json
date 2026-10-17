@@ -184,8 +184,8 @@
       "id": "H21",
       "regla": "DOM: h() rechaza atributos de evento (on*)",
       "archivo": "src/dom.js",
-      "buscar": "if (/^on/i.test(nombre)) throw",
-      "reemplazo": "if (false) throw",
+      "buscar": "    if (/^on/i.test(nombre)) throw new Error(`atributo de evento no permitido: ${nombre}`);\n    if (valor === false",
+      "reemplazo": "    if (false) throw new Error(`atributo de evento no permitido: ${nombre}`);\n    if (valor === false",
       "comando": "test",
       "pruebas": ["tests/unitarias/dom.test.mjs"]
     },
@@ -368,6 +368,87 @@
       "reemplazo": "const l = original;",
       "comando": "test",
       "pruebas": ["tests/unitarias/colores.test.mjs"]
+    },
+    {
+      "id": "H42",
+      "regla": "Token de un enlace: se borra de la URL en cuanto se lee",
+      "archivo": "src/token-url.js",
+      "buscar": "  ventana.history.replaceState(null, '', base);\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H43",
+      "regla": "Router: un cambio de sesión no redibuja la MISMA vista (los códigos de respaldo no se borran)",
+      "archivo": "src/router.js",
+      "buscar": "    return mostrada.patron !== nueva.ruta.patron;",
+      "reemplazo": "    return true;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H44",
+      "regla": "Router: un cambio de sesión no redibuja una vista pública (el token ya cambió el patrón)",
+      "archivo": "src/router.js",
+      "buscar": "    if (mostrada.grupo === 'publico' && nueva.ruta.grupo === 'publico') return false;\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H45",
+      "regla": "Destino después de entrar: solo caminos internos (nunca una URL de otro sitio)",
+      "archivo": "src/sesion.js",
+      "buscar": "if (/^\\/[a-z]/.test(camino) && !camino.startsWith('/entrar'))",
+      "reemplazo": "if (!camino.startsWith('/entrar'))",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H46",
+      "regla": "Destino después de entrar: nunca volver a la propia pantalla de entrar",
+      "archivo": "src/sesion.js",
+      "buscar": " && !camino.startsWith('/entrar'))",
+      "reemplazo": ")",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H47",
+      "regla": "Contraseña nueva: al menos 12 caracteres",
+      "archivo": "src/validacion.js",
+      "buscar": "if (largo < LARGO_MINIMO) return",
+      "reemplazo": "if (largo < LARGO_MINIMO - 1) return",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H48",
+      "regla": "Contraseña nueva: las dos tienen que coincidir",
+      "archivo": "src/validacion.js",
+      "buscar": "if (nueva !== confirmacion) return",
+      "reemplazo": "if (false) return",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H49",
+      "regla": "Código TOTP: se aceptan espacios al pegarlo",
+      "archivo": "src/validacion.js",
+      "buscar": "  const c = texto.replace(/\\s+/g, '');",
+      "reemplazo": "  const c = texto;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
+    },
+    {
+      "id": "H50",
+      "regla": "Código de respaldo: se normaliza a mayúsculas",
+      "archivo": "src/validacion.js",
+      "buscar": "const c = texto.replace(/[\\s-]+/g, '').toUpperCase();",
+      "reemplazo": "const c = texto.replace(/[\\s-]+/g, '');",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/entrada.test.mjs"]
     }
   ]
 }
