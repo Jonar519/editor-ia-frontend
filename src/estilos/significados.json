@@ -45,6 +45,7 @@
     { "texto": "--color-aviso", "fondo": "--color-fondo", "minimo": 3, "nota": "borde o ícono" },
     { "texto": "--color-aviso-texto", "fondo": "--color-aviso-fondo", "minimo": 4.5 },
     { "texto": "--color-peligro", "fondo": "--color-fondo", "minimo": 3, "nota": "borde o ícono" },
+    { "texto": "--color-peligro", "fondo": "--color-superficie", "minimo": 3, "nota": "borde de un campo con error (sobre la tarjeta)" },
     { "texto": "--color-peligro-texto", "fondo": "--color-peligro-fondo", "minimo": 4.5 }
   ]
 }
