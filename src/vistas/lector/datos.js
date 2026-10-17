@@ -38,7 +38,7 @@ function exportar() {
     'form',
     { class: 'tarjeta', novalidate: true, 'aria-labelledby': 'titulo-exportar' },
     h('h2', { id: 'titulo-exportar' }, 'Descargar tus datos'),
-    h('p', {}, 'Un archivo JSON con tu perfil y tu foto, los espacios donde participas, los documentos que son tuyos, tus comentarios y tus sesiones.'),
+    h('p', {}, 'Un archivo JSON con tu perfil y tu foto, los espacios donde participas, los documentos que son tuyos, tus comentarios, tus sesiones, tu historial de seguridad y tu uso del asistente.'),
     contrasena.contenedor,
     boton,
     salida,
