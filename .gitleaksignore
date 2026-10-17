@@ -1,0 +1,7 @@
+# Falsos positivos de gitleaks, identificados por huella (commit:archivo:regla:línea).
+# Cada entrada lleva su justificación. Los merges a main se hacen con "Create a merge commit" para que
+# estas huellas sigan siendo válidas (squash o rebase cambiarían el commit).
+
+# tests/unitarias/entrada.test.mjs línea 10: un "token" ficticio (el abecedario y dígitos) con la forma
+# que acepta consumirToken (43 caracteres base64url), para probar que se borra de la URL. No es un secreto.
+6b8e94f63af0b6ace1b224f6e69f5382cfb08289:tests/unitarias/entrada.test.mjs:generic-api-key:10
