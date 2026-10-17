@@ -95,6 +95,16 @@ export function debeRedibujar(mostrada, nueva) {
   return true;
 }
 
+/**
+ * ¿El camino está en la sección de un enlace de la navegación? "/cuenta/sesiones" está en "/cuenta"; no
+ * en "/cuentas" (segmento completo) y "/" solo es el inicio.
+ * @param {string} camino
+ * @param {string} seccion
+ */
+export function enSeccion(camino, seccion) {
+  return camino === seccion || (seccion !== '/' && camino.startsWith(`${seccion}/`));
+}
+
 // ─── DOM ──────────────────────────────────────────────────────────────────────────
 
 /** Vistas que no se cargan aparte: tienen que funcionar aunque falle la red. */
@@ -135,7 +145,7 @@ export function iniciarRouter(o) {
 
   function marcarNavegacion(/** @type {string} */ camino) {
     for (const a of w.document.querySelectorAll('[data-ruta]')) {
-      if (a.getAttribute('data-ruta') === camino) a.setAttribute('aria-current', 'page');
+      if (enSeccion(camino, a.getAttribute('data-ruta') ?? '')) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     }
   }
