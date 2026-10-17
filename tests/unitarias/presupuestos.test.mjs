@@ -37,6 +37,15 @@ const ROLES = {
 describe('medir', () => {
   const m = medir(MANIFIESTO, tamano, ROLES);
 
+  it('por pantalla: la vista y sus importaciones estáticas, SIN lo que ya trajo la primera carga', () => {
+    expect(m.pantallas).toEqual([
+      { vista: 'src/vistas/admin/panel.js', kib: 5 },
+      { vista: 'src/vistas/editor/editar.js', kib: 54 }, // editar 50 + lista 4
+      { vista: 'src/vistas/lector/documentos.js', kib: 7 }, // documentos 3 + lista 4 (dom ya está)
+      { vista: 'src/vistas/publico/inicio.js', kib: 1 },
+    ]);
+  });
+
   it('primera carga = entrada + importaciones estáticas (no las vistas dinámicas)', () => {
     expect(m.primeraCargaJs).toBe(12); // index 10 + dom 2
   });

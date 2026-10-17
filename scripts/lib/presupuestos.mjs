@@ -11,13 +11,17 @@
 //                   src/diferidas/, o los lenguajes de @codemirror/language-data). No cuentan en el JS del
 //                   rol: se miden aparte, con lo que traen además de la primera carga. "porChunk" mide
 //                   cada chunk por separado y compara el mayor (un lenguaje a la vez).
+//   pantallas       INFORMATIVO (sin tope): lo que descarga abrir cada vista justo después de la primera
+//                   carga (su archivo y sus importaciones estáticas, sin lo que ya trajo la primera carga).
+//                   Es el peor caso: si antes se abrió otra vista que comparte código, se descarga menos.
 
 /**
  * @typedef {{ file: string, src?: string, isEntry?: boolean, isDynamicEntry?: boolean, imports?: string[], dynamicImports?: string[], css?: string[] }} EntradaManifiesto
  * @typedef {Record<string, EntradaManifiesto>} Manifiesto
  * @typedef {{ patron: string, porChunk?: boolean }} Diferida
  * @typedef {{ kib: number, chunks: number, detalle: string }} MedidaDiferida
- * @typedef {{ primeraCargaJs: number, jsPorRol: Record<string, number>, maxChunkJs: { archivo: string, kib: number }, cssTotal: number, diferidas: Record<string, MedidaDiferida> }} Medicion
+ * @typedef {{ vista: string, kib: number }} MedidaPantalla
+ * @typedef {{ primeraCargaJs: number, jsPorRol: Record<string, number>, maxChunkJs: { archivo: string, kib: number }, cssTotal: number, diferidas: Record<string, MedidaDiferida>, pantallas: MedidaPantalla[] }} Medicion
  * @typedef {{ primeraCargaJs: number | null, jsPorRol: Record<string, number | null>, maxChunkJs: number | null, cssTotal: number | null, diferidas?: Record<string, number | null> }} Topes
  */
 
@@ -111,7 +115,15 @@ export function medir(manifiesto, bytesGzip, roles, diferidas = {}) {
       medidasDiferidas[nombre] = { kib: redondear(propio(claves)), chunks: claves.length, detalle: claves.length ? claves.join(', ') : 'sin chunks' };
     }
   }
-  return { primeraCargaJs: redondear(suma(primera)), jsPorRol, maxChunkJs: mayor, cssTotal: redondear(suma(css)), diferidas: medidasDiferidas };
+  /** @type {MedidaPantalla[]} */
+  const pantallas = Object.entries(manifiesto)
+    .filter(([clave, e]) => e.isDynamicEntry && /^src\/vistas\//.test(e.src ?? clave))
+    .map(([clave, e]) => {
+      const archivos = [...estaticos(manifiesto, clave, new Set())].filter((a) => !primera.has(a));
+      return { vista: e.src ?? clave, kib: redondear(archivos.reduce((t, a) => t + bytesGzip(a), 0)) };
+    })
+    .sort((a, b) => a.vista.localeCompare(b.vista));
+  return { primeraCargaJs: redondear(suma(primera)), jsPorRol, maxChunkJs: mayor, cssTotal: redondear(suma(css)), diferidas: medidasDiferidas, pantallas };
 }
 
 /**

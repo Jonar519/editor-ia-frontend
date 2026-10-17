@@ -26,13 +26,16 @@ const config = JSON.parse(readFileSync(path.join(RAIZ, 'presupuestos.json'), 'ut
 
 // Nivel 9: el peor caso para nosotros es el mejor caso de compresión del servidor; no nos favorece.
 const bytesGzip = (/** @type {string} */ archivo) => gzipSync(readFileSync(path.join(DIST, archivo)), { level: 9 }).length;
-const filas = comparar(medir(manifiesto, bytesGzip, config.roles, config.diferidas), config.topesKiBGzip);
+const medicion = medir(manifiesto, bytesGzip, config.roles, config.diferidas);
+const filas = comparar(medicion, config.topesKiBGzip);
 
 console.log(`Presupuestos (KiB con gzip). Estado: ${config.estado}\n`);
 for (const f of filas) {
   const estado = f.tope === null ? 'SIN TOPE CONFIRMADO' : f.excedido ? `EXCEDE el tope de ${String(f.tope)}` : `OK (tope ${String(f.tope)})`;
   console.log(`  ${f.nombre.padEnd(52)} ${f.medido.toFixed(2).padStart(8)}  ${estado}`);
 }
+console.log('\nPor pantalla, además de la primera carga (informativo, sin tope):');
+for (const p of medicion.pantallas) console.log(`  ${p.vista.padEnd(52)} ${p.kib.toFixed(2).padStart(8)}`);
 const excedidos = filas.filter((f) => f.excedido);
 const pendientes = filas.filter((f) => f.tope === null);
 if (pendientes.length > 0) console.log(`\n${String(pendientes.length)} tope(s) sin confirmar: se miden, no se aplican.`);
