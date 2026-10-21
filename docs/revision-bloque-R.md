@@ -15,6 +15,17 @@ Si alguna no queda lista, el texto se quita o se reescribe para decir solo lo qu
 
 **Decisión escrita (cierre del bloque I):** las dos ideas se quedan por ahora. Si los bloques N, P2 y Q no llegan a existir antes de la entrega, **se quitan**.
 
+## Sin medir al cerrar el tramo 2 (pruebas manuales al final)
+
+Anotado por escrito al cerrar el bloque J. Se prueban a mano con la guía consolidada.
+
+| Qué | Por qué quedó sin medir | Cómo se cierra |
+|---|---|---|
+| Recodificación del avatar con fotos reales de cámara en Firefox | La E2E usa un PNG generado; la prueba en vivo con JPEG fue en Chrome | Subir en Firefox una foto de teléfono con GPS: se ve bien recortada y la exportación no trae metadatos |
+| Safari | Las E2E corren en Chromium y Firefox | Recorrer las demos H1 a J en Safari |
+| Olvidar la sesión después de eliminar la cuenta | Lo cubre solo la E2E, sin mutación | Demo J, paso 9: recargar después de eliminar y ver que no hay sesión |
+| Foco en las confirmaciones (cancelar invitación, eliminar cuenta) | Lo cubre solo la E2E, sin mutación | Demo J, pasos 8 y 9, solo con el teclado |
+
 ## Pendientes reabribles si queda tiempo
 
 | Tema | Estado | Cómo se reabre |
