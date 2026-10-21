@@ -567,3 +567,95 @@ h2[tabindex='-1']:focus,
   border: 1px solid var(--color-borde);
   border-radius: var(--radio);
 }
+
+/* ─── Documentos y editor (bloque L) ──────────────────────────────────────── */
+
+.espacio + .espacio {
+  margin-top: var(--espacio-8);
+}
+
+.crear {
+  max-width: 28rem;
+  margin: var(--espacio-4) 0;
+}
+
+.estado-red {
+  margin: 0 0 var(--espacio-4);
+}
+
+.quien-esta {
+  margin: 0 0 var(--espacio-4);
+}
+
+.quien-esta-titulo {
+  margin: 0 0 var(--espacio-2);
+  font-size: var(--tamano-base);
+}
+
+.quien-esta-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2) var(--espacio-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.muestra-presencia {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: var(--espacio-2);
+  border-radius: 50%;
+}
+
+/* El Markdown como texto (hasta la vista renderizada del bloque O). */
+.documento-texto {
+  margin: 0;
+  padding: var(--espacio-4);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.editor-documento .cm-editor {
+  min-height: 20rem;
+  font-size: var(--tamano-base);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: var(--radio);
+}
+
+.editor-documento .cm-editor .cm-content {
+  padding: var(--espacio-4) var(--espacio-2);
+  font-family: var(--fuente-codigo);
+  caret-color: var(--color-texto);
+}
+
+.editor-documento .cm-editor.cm-focused {
+  outline: var(--grosor-foco) solid;
+  outline-color: var(--color-foco);
+  outline-offset: 2px;
+}
+
+/* Cursores remotos: el NOMBRE siempre visible (y-codemirror.next lo muestra solo al pasar el ratón). Con
+   la opacidad fija y sin el punto, sus transiciones no tienen nada que animar. */
+.editor-documento .cm-editor .cm-ySelectionInfo {
+  top: -1.4em;
+  padding: 0 var(--espacio-1);
+  font-family: var(--fuente-texto);
+  font-size: var(--tamano-pequeno);
+  opacity: 1;
+}
+
+.editor-documento .cm-editor .cm-ySelectionCaretDot {
+  display: none;
+}
+
+.editor-documento .cm-editor .cm-line {
+  padding-top: 0.2em;
+}
