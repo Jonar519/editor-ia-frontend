@@ -584,6 +584,24 @@
       "reemplazo": "if (!Array.isArray(e.detalles)) return false;",
       "comando": "test",
       "pruebas": ["tests/unitarias/cuenta.test.mjs"]
+    },
+    {
+      "id": "L01",
+      "regla": "Presencia: lo que dibuja el editor sale de la cuenta del servidor, no del user que manda otro cliente",
+      "archivo": "src/tiempo-real/presencia.js",
+      "buscar": "if (cuenta) estado.user = usuarioParaDibujar(cuenta.id, cuenta.nombre);",
+      "reemplazo": "if (cuenta) estado.user ??= usuarioParaDibujar(cuenta.id, cuenta.nombre);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presencia.test.mjs"]
+    },
+    {
+      "id": "L02",
+      "regla": "Presencia: un estado sin la cuenta del servidor no se dibuja",
+      "archivo": "src/tiempo-real/presencia.js",
+      "buscar": "else estados.delete(id);",
+      "reemplazo": "else void id;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presencia.test.mjs"]
     }
   ]
 }
