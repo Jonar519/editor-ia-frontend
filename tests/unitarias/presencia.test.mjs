@@ -35,6 +35,20 @@ describe('presencia', () => {
     expect(local.getStates().get(id)?.user).toEqual({ name: ANA.nombre, color: `var(--color-presencia-${i})`, colorLight: `var(--color-presencia-${i}-seleccion)` });
   });
 
+  it('un cursor ajeno sin todos sus campos o mal formado no tumba el dibujo de los cursores', () => {
+    const doc = new Y.Doc();
+    doc.getText('contenido').insert(0, 'hola');
+    const local = new Awareness(doc);
+    normalizarPresencia(local);
+    // Como lo serializa relativePositionToJSON de Yjs: sin "item" (medido en vivo: tumbaba el plugin).
+    const fin = { tname: 'contenido', assoc: 0 };
+    const bueno = llega(local, { usuario: ANA, cursor: { anchor: fin, head: fin } });
+    const c = local.getStates().get(bueno)?.cursor;
+    expect(Y.createAbsolutePositionFromRelativePosition(c.anchor, doc)?.index).toBe(4);
+    const malo = llega(local, { usuario: ANA, cursor: { anchor: { item: { client: 'x', clock: 1 } }, head: fin } });
+    expect(local.getStates().get(malo)?.cursor).toBeNull();
+  });
+
   it('un estado sin la cuenta del servidor no se dibuja ni cuenta como presente', () => {
     const local = new Awareness(new Y.Doc());
     normalizarPresencia(local);

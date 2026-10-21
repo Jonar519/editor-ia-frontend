@@ -6,6 +6,7 @@
 // sale del id de esa cuenta. Un color inventado ("red; background-image: url(…)") nunca llega al DOM.
 //
 // Los colores son tokens CSS (--color-presencia-N): aquí solo se nombran, nunca se escriben.
+import * as Y from 'yjs';
 
 /** Cantidad de colores de la paleta de presencia (tokens --color-presencia-1 … N). */
 export const COLORES_PRESENCIA = 8;
@@ -41,9 +42,30 @@ export function cuentaDe(estado) {
   return u && typeof u.id === 'string' && typeof u.nombre === 'string' ? { id: u.id, nombre: u.nombre } : null;
 }
 
+/** null o undefined (en JSON, un campo ausente). */
+const falta = (/** @type {unknown} */ x) => x === null || x === undefined;
+const esId = (/** @type {any} */ x) => !falta(x) && Number.isSafeInteger(x.client) && Number.isSafeInteger(x.clock) && x.client >= 0 && x.clock >= 0;
+
 /**
- * Reescribe `user` de cada estado remoto. Hay que registrarlo ANTES que el editor: los oyentes de la
- * presencia se llaman en orden y el editor redibuja dentro del suyo.
+ * Una posición relativa de Yjs rearmada con todos sus campos, o null si no tiene forma válida. y-codemirror
+ * la usa tal cual: sin `item: null` explícito (así la serializa relativePositionToJSON) el plugin de
+ * cursores se cae y la persona se queda sin ver ni publicar cursores (medido en la prueba en vivo de L).
+ * @param {any} p
+ */
+export function posicionSegura(p) {
+  if (typeof p !== 'object' || p === null) return null;
+  if (!falta(p.type) && !esId(p.type)) return null;
+  if (!falta(p.item) && !esId(p.item)) return null;
+  if (!falta(p.tname) && typeof p.tname !== 'string') return null;
+  if (falta(p.type) && falta(p.item) && falta(p.tname)) return null;
+  if (!falta(p.assoc) && !Number.isSafeInteger(p.assoc)) return null;
+  return Y.createRelativePositionFromJSON(p);
+}
+
+/**
+ * Reescribe `user` de cada estado remoto, y su cursor con forma válida (o sin cursor). Hay que
+ * registrarlo ANTES que el editor: los oyentes de la presencia se llaman en orden y el editor redibuja
+ * dentro del suyo.
  * @param {import('y-protocols/awareness').Awareness} presencia
  */
 export function normalizarPresencia(presencia) {
@@ -55,8 +77,16 @@ export function normalizarPresencia(presencia) {
       const estado = estados.get(id);
       if (!estado) continue;
       const cuenta = cuentaDe(estado);
-      if (cuenta) estado.user = usuarioParaDibujar(cuenta.id, cuenta.nombre);
-      else estados.delete(id);
+      if (!cuenta) {
+        estados.delete(id);
+        continue;
+      }
+      estado.user = usuarioParaDibujar(cuenta.id, cuenta.nombre);
+      if (!falta(estado.cursor)) {
+        const anchor = posicionSegura(estado.cursor.anchor);
+        const head = posicionSegura(estado.cursor.head);
+        estado.cursor = anchor && head ? { anchor, head } : null;
+      }
     }
   };
   presencia.on('change', alCambio);

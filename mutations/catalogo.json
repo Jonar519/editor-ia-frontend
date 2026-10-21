@@ -589,8 +589,8 @@
       "id": "L01",
       "regla": "Presencia: lo que dibuja el editor sale de la cuenta del servidor, no del user que manda otro cliente",
       "archivo": "src/tiempo-real/presencia.js",
-      "buscar": "if (cuenta) estado.user = usuarioParaDibujar(cuenta.id, cuenta.nombre);",
-      "reemplazo": "if (cuenta) estado.user ??= usuarioParaDibujar(cuenta.id, cuenta.nombre);",
+      "buscar": "estado.user = usuarioParaDibujar(cuenta.id, cuenta.nombre);",
+      "reemplazo": "estado.user ??= usuarioParaDibujar(cuenta.id, cuenta.nombre);",
       "comando": "test",
       "pruebas": ["tests/unitarias/presencia.test.mjs"]
     },
@@ -598,8 +598,17 @@
       "id": "L02",
       "regla": "Presencia: un estado sin la cuenta del servidor no se dibuja",
       "archivo": "src/tiempo-real/presencia.js",
-      "buscar": "else estados.delete(id);",
-      "reemplazo": "else void id;",
+      "buscar": "estados.delete(id);",
+      "reemplazo": "void id;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/presencia.test.mjs"]
+    },
+    {
+      "id": "L03",
+      "regla": "Presencia: el cursor ajeno se rearma con todos sus campos (sin eso, el plugin de cursores se cae)",
+      "archivo": "src/tiempo-real/presencia.js",
+      "buscar": "  return Y.createRelativePositionFromJSON(p);",
+      "reemplazo": "  return p;",
       "comando": "test",
       "pruebas": ["tests/unitarias/presencia.test.mjs"]
     }
