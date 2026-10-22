@@ -8,6 +8,7 @@ import { abrirDocumento } from '../../tiempo-real/documento.js';
 import { indicadorRed } from '../../tiempo-real/estado-red.js';
 import { quienEsta } from '../../tiempo-real/quien-esta.js';
 import { panelComentarios } from '../../comentarios/panel.js';
+import { vistaRenderizada } from '../../markdown/vista-renderizada.js';
 import { puedeEditar } from './documentos.js';
 
 /** @param {Record<string, string>} params */
@@ -49,6 +50,19 @@ export async function render(params) {
   vivo.texto.observe(dibujar);
   texto.addEventListener('input', dibujar);
   dibujar();
+
+  // Bloque O: se lee la vista RENDERIZADA; el texto fuente (donde hoy se elige el tramo a comentar) queda
+  // a un botón de distancia.
+  const renderizada = vistaRenderizada({ texto: vivo.texto, etiqueta: `Documento ${d.titulo}` });
+  const fuente = h('div', { hidden: true }, vacio, texto);
+  const alternar = h('button', { type: 'button', class: 'boton boton-chico', 'aria-pressed': 'false' }, 'Ver el texto fuente');
+  const verFuente = (/** @type {boolean} */ si) => {
+    fuente.hidden = !si;
+    renderizada.el.hidden = si;
+    alternar.setAttribute('aria-pressed', String(si));
+  };
+  alternar.addEventListener('click', () => verFuente(alternar.getAttribute('aria-pressed') !== 'true'));
+  vivo.doc.on('destroy', () => renderizada.destruir());
   pagina.append(red.el);
   pagina.append(
     h(
@@ -70,6 +84,7 @@ export async function render(params) {
       rol: () => d.rol,
       seleccion: () => (texto.selectionStart < texto.selectionEnd ? { inicio: texto.selectionStart, fin: texto.selectionEnd } : null),
       alIr: ({ inicio, fin }) => {
+        verFuente(true);
         texto.focus();
         texto.setSelectionRange(inicio, fin);
       },
@@ -86,6 +101,19 @@ export async function render(params) {
       p.destruir();
     });
   }
-  pagina.append(h('div', { class: 'zona-documento' }, h('div', {}, vacio, texto), panel?.el ?? null));
+  pagina.append(
+    h(
+      'div',
+      { class: 'zona-documento' },
+      h(
+        'div',
+        {},
+        h('p', { class: 'acciones' }, alternar, ' ', h('span', { class: 'ayuda' }, 'Para comentar un tramo, elígelo en el texto fuente.')),
+        renderizada.el,
+        fuente,
+      ),
+      panel?.el ?? null,
+    ),
+  );
   return pagina;
 }

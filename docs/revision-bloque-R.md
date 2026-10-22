@@ -26,6 +26,13 @@ Anotado por escrito al cerrar el bloque J. Se prueban a mano con la guía consol
 | Olvidar la sesión después de eliminar la cuenta | Lo cubre solo la E2E, sin mutación | Demo J, paso 9: recargar después de eliminar y ver que no hay sesión |
 | Foco en las confirmaciones (cancelar invitación, eliminar cuenta) | Lo cubre solo la E2E, sin mutación | Demo J, pasos 8 y 9, solo con el teclado |
 
+## Para el despliegue
+
+| Qué | Por qué | Cómo se cierra |
+|---|---|---|
+| CSP con `worker-src 'self'` | La comparación de versiones (bloque N) corre en un Web Worker propio (`src/diff/trabajador.js`); una CSP sin `worker-src` (o con un `default-src` que no lo permita) lo bloquea | En la CSP del despliegue: `worker-src 'self'`. Se prueba comparando dos versiones en el sitio desplegado. |
+| Riesgo R-02: versiones sin tope | Abuso de almacenamiento (ver `docs/modelo-amenazas.md` del backend) | Revisar con el monitoreo del tamaño de la base; decidir si hace falta cuota o retención. |
+
 ## Pendientes reabribles si queda tiempo
 
 | Tema | Estado | Cómo se reabre |
