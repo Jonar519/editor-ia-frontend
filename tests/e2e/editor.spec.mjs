@@ -91,8 +91,9 @@ function relevo() {
 /**
  * Una persona con sesión abierta en el editor del documento.
  * @param {Page} page @param {Cuenta} cuenta @param {ReturnType<typeof relevo>} servidor
+ * @param {{ sinRed: boolean }} [conexion]  con sinRed, el ticket falla como sin red
  */
-async function abrirEditor(page, cuenta, servidor) {
+async function abrirEditor(page, cuenta, servidor, conexion = { sinRed: false }) {
   const json = (/** @type {import('@playwright/test').Route} */ r, /** @type {unknown} */ cuerpo, estado = 200) =>
     r.fulfill({ status: estado, contentType: 'application/json', body: JSON.stringify(cuerpo) });
   await page.route('**/api/auth/refresco', (r) => json(r, { accessToken: `token-ficticio-${cuenta.nombre}`, expiraEn: Math.floor(Date.now() / 1000) + 900, usuario: cuenta }));
@@ -102,6 +103,8 @@ async function abrirEditor(page, cuenta, servidor) {
   /** @type {unknown[]} */
   const tickets = [];
   await page.route('**/api/tiempo-real/tickets', (r) => {
+    // Sin red, la petición falla como en un navegador desconectado (el WebSocket simulado no la ve).
+    if (conexion.sinRed) return r.abort('internetdisconnected');
     tickets.push(r.request().postDataJSON());
     return json(r, { ticket: 'A'.repeat(43), expiraEnSegundos: 30 }, 201);
   });
@@ -225,3 +228,78 @@ for (const esquema of /** @type {const} */ (['light', 'dark'])) {
     });
   });
 }
+
+// ─── Sin conexión (bloque M) ───────────────────────────────────────────────────────
+
+/** Filas de la copia local del navegador (IndexedDB "cuaderno-local"). */
+const filasEnLaCopia = (/** @type {Page} */ page) =>
+  page.evaluate(
+    () =>
+      new Promise((resolver) => {
+        const pedido = indexedDB.open('cuaderno-local');
+        pedido.onsuccess = () => {
+          const cuenta = pedido.result.transaction('cambios').objectStore('cambios').count();
+          cuenta.onsuccess = () => {
+            pedido.result.close();
+            resolver(cuenta.result);
+          };
+        };
+      }),
+  );
+
+test('sin red: Ana sigue escribiendo, cierra la página, vuelve con red y todo llega una sola vez; salir borra la copia', async ({ page, browser, baseURL }) => {
+  const servidor = relevo();
+  const { contexto: contextoB, pagina: pageB } = await segundaPersona(browser, baseURL, 'light');
+  const conexionAna = { sinRed: false };
+  try {
+    const a = await abrirEditor(page, ANA, servidor, conexionAna);
+    const b = await abrirEditor(pageB, BETO, servidor);
+    await a.editor.click();
+    await page.keyboard.type('Base');
+    await expect.poll(() => texto(pageB)).toBe('Base');
+
+    // Ana se queda sin red: la conexión se cae y los tickets fallan.
+    conexionAna.sinRed = true;
+    await page.context().setOffline(true);
+    await a.sockets.at(-1)?.close({ code: 1001, reason: 'sin red' });
+    await expect(red(page)).toContainText('Sin conexión');
+    await page.keyboard.press('Control+End');
+    const filasAntes = await filasEnLaCopia(page);
+    await page.keyboard.type(' sin red');
+    await expect(red(page)).toContainText('Hay cambios sin enviar, guardados en este dispositivo');
+    // Beto, en línea, escribe a la vez; a Ana no le llega (ni a Beto lo de Ana).
+    await b.editor.click();
+    await pageB.keyboard.press('Control+Home');
+    await pageB.keyboard.type('Beto: ');
+    await expect.poll(() => texto(pageB)).toBe('Beto: Base');
+    await expect.poll(() => texto(page)).toBe('Base sin red');
+
+    // Ana cierra la página SIN red (lo escrito queda en IndexedDB) y la abre de nuevo con red.
+    // La escritura en IndexedDB es asíncrona: se espera a que esté cada tecla escrita sin red (una
+    // actualización de Yjs por tecla, una fila por actualización).
+    await expect.poll(() => filasEnLaCopia(page)).toBeGreaterThanOrEqual(filasAntes + ' sin red'.length);
+    const contextoA = page.context();
+    await page.close();
+    await contextoA.setOffline(false);
+    conexionAna.sinRed = false;
+    const page2 = await contextoA.newPage();
+    await page2.route('**/api/**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: cuerpoError('sin_refresco', 'Inicia sesión de nuevo') }));
+    const a2 = await abrirEditor(page2, ANA, servidor, conexionAna);
+    const esperado = 'Beto: Base sin red';
+    await expect.poll(() => texto(page2)).toBe(esperado);
+    await expect.poll(() => texto(pageB)).toBe(esperado);
+    expect(servidor.doc.getText('contenido').toString()).toBe(esperado);
+    await expect(red(page2)).not.toContainText('cambios sin enviar');
+    expect(a2.tickets).toHaveLength(1);
+
+    // Salir borra la copia local del dispositivo.
+    const bases = () => page2.evaluate(async () => (await indexedDB.databases()).map((d) => d.name));
+    expect(await bases()).toContain('cuaderno-local');
+    await page2.route('**/api/auth/sesion', (r) => r.fulfill({ status: 204 }));
+    await page2.getByRole('button', { name: 'Salir' }).click();
+    await expect(page2).toHaveURL(/#\/$/);
+    await expect.poll(bases).not.toContain('cuaderno-local');
+  } finally {
+    await contextoB.close();
+  }
+});

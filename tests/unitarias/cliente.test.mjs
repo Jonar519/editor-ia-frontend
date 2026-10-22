@@ -61,7 +61,11 @@ describe('token solo en memoria y cabeceras', () => {
     expect(/** @type {unknown[]} */ (Object.values(api)).includes('tok-secreto')).toBe(false);
   });
 
-  it('ningún archivo del código del navegador usa localStorage, sessionStorage, IndexedDB ni document.cookie', () => {
+  // Bloque M: la copia local de los documentos usa IndexedDB, y SOLO en estos dos archivos, que no tocan la
+  // sesión. localStorage, sessionStorage y document.cookie siguen prohibidos en todo el código.
+  const COPIA_LOCAL = ['almacen-local.js', 'borrar-local.js'];
+
+  it('ningún archivo del código del navegador usa localStorage, sessionStorage ni document.cookie; IndexedDB solo la copia local', () => {
     const raiz = path.join(import.meta.dirname, '../../src');
     const archivos = readdirSync(raiz, { recursive: true, withFileTypes: true }).filter((x) => x.isFile() && x.name.endsWith('.js'));
     expect(archivos.length).toBeGreaterThan(10); // control: de verdad se revisan archivos
@@ -70,7 +74,13 @@ describe('token solo en memoria y cabeceras', () => {
       const codigo = readFileSync(path.join(a.parentPath, a.name), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/^\s*\/\/.*$/gm, '');
-      expect(codigo, a.name).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/);
+      expect(codigo, a.name).not.toMatch(/localStorage|sessionStorage|document\.cookie/);
+      if (COPIA_LOCAL.includes(a.name)) {
+        // La copia local nunca ve la sesión: no importa el cliente del API ni la sesión, ni habla de tokens.
+        expect(codigo, a.name).not.toMatch(/sesion\.js|api\/cliente\.js|token|accessToken|refresco/i);
+      } else {
+        expect(codigo, a.name).not.toMatch(/indexedDB/);
+      }
     }
   });
 });

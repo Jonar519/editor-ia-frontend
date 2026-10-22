@@ -10,6 +10,7 @@ import { dejarDespedida } from '../../despedida.js';
 import { aviso, h } from '../../dom.js';
 import { bloqueosDeEliminacion } from '../../reglas-cuenta.js';
 import { api } from '../../sesion.js';
+import { borrarDatosLocales } from '../../tiempo-real/borrar-local.js';
 import { normalizarCodigo } from '../../validacion.js';
 import { cargarPerfil, paginaCuenta, resultado } from './comun.js';
 
@@ -134,6 +135,7 @@ function eliminar(p) {
         /** @type {{ espaciosBorrados: number, documentosBorrados: number }} */
         const r = await api.solicitar('/cuenta', { metodo: 'DELETE', cuerpo });
         contrasena.input.value = '';
+        await borrarDatosLocales();
         dejarDespedida(r);
         // Primero se cambia a la vista PÚBLICA y recién entonces se olvida la sesión: así el router no
         // pasa por "entrar" (ni recuerda esta sección como destino) al perder la sesión.

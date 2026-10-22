@@ -26,8 +26,9 @@ export async function render(params) {
   const red = indicadorRed();
   const texto = h('pre', { class: 'documento-texto', tabindex: '0', 'aria-label': `Contenido de ${d.titulo}` });
   const vacio = h('p', { class: 'vacio' }, 'Este documento está vacío.');
-  const vivo = abrirDocumento({ documentoId: d.id, alEstado: red.poner });
+  // Quien lee no guarda copia en el dispositivo (no tiene cambios propios que conservar).
   red.poner('conectando');
+  const vivo = await abrirDocumento({ documentoId: d.id, alEstado: red.poner });
   const dibujar = () => {
     const t = vivo.texto.toString();
     texto.textContent = t;

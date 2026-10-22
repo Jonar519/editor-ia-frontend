@@ -611,6 +611,42 @@
       "reemplazo": "  return p;",
       "comando": "test",
       "pruebas": ["tests/unitarias/presencia.test.mjs"]
+    },
+    {
+      "id": "M01",
+      "regla": "Sin conexión: al reconectar, el paso 2 lleva TODO lo que el servidor no tiene",
+      "archivo": "src/tiempo-real/conexion.js",
+      "buscar": "encoding.writeVarUint8Array(e, Y.encodeStateAsUpdate(o.doc, vector));",
+      "reemplazo": "encoding.writeVarUint8Array(e, Y.encodeStateAsUpdate(o.doc, Y.encodeStateVector(o.doc)));",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/convergencia.test.mjs"]
+    },
+    {
+      "id": "M02",
+      "regla": "Sin conexión: cada actualización se guarda en la copia local",
+      "archivo": "src/tiempo-real/documento.js",
+      "buscar": ": a.guardar(u))).catch(fallo);",
+      "reemplazo": ": Promise.resolve())).catch(fallo);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/convergencia.test.mjs"]
+    },
+    {
+      "id": "M03",
+      "regla": "Sin conexión: al abrir, el documento arranca con la copia local antes de conectar",
+      "archivo": "src/tiempo-real/documento.js",
+      "buscar": "for (const u of guardadas) Y.applyUpdate(doc, u, DE_LA_COPIA);",
+      "reemplazo": "for (const u of guardadas) void u;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/convergencia.test.mjs"]
+    },
+    {
+      "id": "M04",
+      "regla": "Sin conexión: un cambio que no se pudo enviar queda pendiente (no se da por enviado)",
+      "archivo": "src/tiempo-real/conexion.js",
+      "buscar": "if (!enviar(encoding.toUint8Array(e))) ponerPendiente(true);",
+      "reemplazo": "enviar(encoding.toUint8Array(e));",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/convergencia.test.mjs"]
     }
   ]
 }
