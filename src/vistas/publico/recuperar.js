@@ -6,6 +6,7 @@ import { ErrorApi } from '../../api/errores.js';
 import { campo, campoContrasena, controlEnvio, detallesComoLista } from '../../componentes/formulario.js';
 import { aviso, h } from '../../dom.js';
 import { api } from '../../sesion.js';
+import { borrarDatosLocales } from '../../tiempo-real/borrar-local.js';
 import { consumirToken } from '../../token-url.js';
 import { problemaContrasenaNueva } from '../../validacion.js';
 
@@ -81,8 +82,10 @@ function completar(token) {
     void (async () => {
       try {
         await api.solicitar('/auth/recuperacion/completar', { metodo: 'POST', cuerpo: { token, contrasena: nueva.valor() }, sinSesion: true });
-        // Restablecer cerró TODAS las sesiones, también la de esta pestaña si la había.
+        // Restablecer cerró TODAS las sesiones, también la de esta pestaña si la había. La copia local de
+        // los documentos también se borra (restablecer puede deberse a que otra persona entró).
         api.olvidarSesion();
+        await borrarDatosLocales();
         form.replaceWith(aviso('exito', 'Tu contraseña cambió y se cerraron todas tus sesiones.'), h('p', {}, h('a', { class: 'boton boton-primario', href: '#/entrar' }, 'Entrar')));
       } catch (err) {
         envio.listo();

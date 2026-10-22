@@ -2,6 +2,7 @@
 // Al abrir la página no hay access token (vive solo en memoria): se pide uno con la cookie de refresco.
 // Si no hay cookie válida, no hay sesión.
 import { crearClienteApi } from './api/cliente.js';
+import { borrarDatosLocales } from './tiempo-real/borrar-local.js';
 
 export const api = crearClienteApi();
 
@@ -42,12 +43,16 @@ export function tomarDestino() {
   return d;
 }
 
-/** Cierra la sesión en el servidor (si se puede) y la olvida aquí siempre. */
+/**
+ * Cierra la sesión en el servidor (si se puede) y la olvida aquí siempre, con la copia local de los
+ * documentos (bloque M): en un equipo compartido, la siguiente persona no la encuentra.
+ */
 export async function cerrarSesion() {
   try {
     await api.solicitar('/auth/sesion', { metodo: 'DELETE' });
   } catch {
     // Sin red o con la sesión ya vencida: igual se olvida localmente.
   }
+  await borrarDatosLocales();
   api.olvidarSesion();
 }
