@@ -62,6 +62,9 @@ const CARGAS = [
   '```js" onmouseover="alert(1)\ncódigo\n```',
   '| a | <script>x</script> |\n|---|---|\n| <img src=x onerror=alert(1)> | b |',
   '[x](https://example.com "t\\" onmouseover=\\"alert(1)")',
+  '$x" onmouseover="alert(1)$',
+  '$$\n\\href{javascript:alert(1)}{x}\n$$',
+  '$\\url{javascript:alert(1)}$ y $\\includegraphics{https://example.com/a.png}$',
 ];
 
 describe('batería XSS de la vista renderizada', () => {
@@ -124,6 +127,18 @@ describe('vista renderizada: estructura y posiciones', () => {
     expect(de('th').map((x) => x.a)).toEqual([{ scope: 'col', class: 'alinear-centro' }, { scope: 'col', class: 'alinear-derecha' }]);
     expect(de('code')[0]?.a['data-lenguaje']).toBe('js');
     expect(de('del')).toHaveLength(1);
+  });
+
+  it('fórmulas: en línea y en bloque, con su fuente como texto (hasta que KaTeX las dibuja) y su posición', () => {
+    const md = 'Área $\\pi r^2$ y\n\n$$\nE = mc^2\n$$';
+    const { elementos, textos } = recorrer(vista(md));
+    const formulas = elementos.filter((x) => x.a['data-tex']);
+    expect(formulas.map((x) => [x.e, x.a.class, x.a['data-tex']])).toEqual([
+      ['span', 'formula', '\\pi r^2'],
+      ['div', 'formula-bloque', 'E = mc^2'],
+    ]);
+    expect(md.slice(Number(formulas[0]?.a['data-desde']), Number(formulas[0]?.a['data-hasta']))).toBe('$\\pi r^2$');
+    expect(textos).toContain('\\pi r^2');
   });
 
   it('cada texto sabe dónde está en el Markdown (base para anclar comentarios)', () => {

@@ -153,7 +153,7 @@ Los topes viven en `presupuestos.json`:
 
 - Se miden aparte del JS del rol, con lo que traen **además** de lo que ya cargó quien las pide.
 - Los lenguajes se miden de uno en uno y se compara el mayor.
-- Topes aplicados al cerrar H2: highlight 60 y lenguaje 35. KaTeX sigue en `null`: se decide en el bloque O.
+- Topes aplicados al cerrar H2: highlight 60 y lenguaje 35. KaTeX: 75 al cerrar O (medido integrado: 74,94; su CSS cuenta en el CSS total y sus fuentes se descargan aparte, solo las que usa cada fórmula).
 - Mermaid queda fuera: es mejora futura, sin excepción al tope por chunk.
 
 **Por pantalla (informativo, sin tope).** Lo que descarga abrir cada vista justo después de la primera carga: su archivo y sus importaciones estáticas, sin lo que ya trajo la primera carga. Es el peor caso: si antes se abrió otra vista que comparte código, se descarga menos.

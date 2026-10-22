@@ -17,6 +17,8 @@ import { gfmTaskListItemFromMarkdown } from 'mdast-util-gfm-task-list-item';
 import { gfmStrikethrough } from 'micromark-extension-gfm-strikethrough';
 import { gfmTable } from 'micromark-extension-gfm-table';
 import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item';
+import { mathFromMarkdown } from 'mdast-util-math';
+import { math } from 'micromark-extension-math';
 
 /**
  * @typedef {{ t: string, desde: number, hasta: number }} Texto  un trozo de texto y su lugar en el Markdown
@@ -25,7 +27,7 @@ import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item';
 
 /** Elementos permitidos y los atributos que cada uno puede llevar. Nada más llega al DOM. */
 export const PERMITIDOS = /** @type {const} */ ({
-  div: ['class'],
+  div: ['class', 'data-tex', 'data-desde', 'data-hasta'],
   p: [],
   h1: [],
   h2: [],
@@ -52,12 +54,14 @@ export const PERMITIDOS = /** @type {const} */ ({
   tr: [],
   th: ['scope', 'class'],
   td: ['class'],
-  span: ['class', 'data-desde', 'data-hasta'],
+  span: ['class', 'data-desde', 'data-hasta', 'data-tex'],
 });
 
 /** Protocolos de enlace permitidos. Todo lo demás (javascript:, data:, vbscript:, file:...) sale como texto. */
 const PROTOCOLOS = ['http:', 'https:', 'mailto:'];
-const CLASES = /^(tarea|alinear-(izquierda|centro|derecha)|html-literal|imagen|markdown|hljs-[a-z_-]+( [a-z_-]+)*)$/;
+const CLASES = /^(tarea|alinear-(izquierda|centro|derecha)|html-literal|imagen|markdown|formula|formula-bloque|hljs-[a-z_-]+( [a-z_-]+)*)$/;
+/** Tope de la fuente de una fórmula (KaTeX con más no se intenta: queda como texto). */
+const TEX_MAXIMO = 5000;
 const LENGUAJE = /^[a-z0-9#+-]{1,20}$/i;
 const NUMERO = /^\d{1,9}$/;
 
@@ -97,6 +101,8 @@ function valorPermitido(/** @type {string} */ e, /** @type {string} */ nombre, /
     case 'data-desde':
     case 'data-hasta':
       return NUMERO.test(valor) ? valor : null;
+    case 'data-tex':
+      return valor.length <= TEX_MAXIMO ? valor : null;
     case 'title':
     case 'aria-label':
       return valor.slice(0, 300);
@@ -108,8 +114,8 @@ function valorPermitido(/** @type {string} */ e, /** @type {string} */ nombre, /
 /** El Markdown a mdast con posiciones. Sin la extensión de HTML: el HTML queda como nodos "html" (texto). */
 export function analizar(/** @type {string} */ md) {
   return fromMarkdown(md, {
-    extensions: [gfmTable(), gfmStrikethrough(), gfmTaskListItem()],
-    mdastExtensions: [gfmTableFromMarkdown(), gfmStrikethroughFromMarkdown(), gfmTaskListItemFromMarkdown()],
+    extensions: [gfmTable(), gfmStrikethrough(), gfmTaskListItem(), math()],
+    mdastExtensions: [gfmTableFromMarkdown(), gfmStrikethroughFromMarkdown(), gfmTaskListItemFromMarkdown(), mathFromMarkdown()],
   });
 }
 
@@ -174,6 +180,17 @@ export function aVista(raiz, md) {
         const a = { 'data-desde': String(t.desde) };
         if (typeof n.lang === 'string' && LENGUAJE.test(n.lang)) a['data-lenguaje'] = n.lang;
         return [nodo('pre', {}, [nodo('code', a, [t])])];
+      }
+      case 'inlineMath':
+      case 'math': {
+        // Fórmula (KaTeX, bloque O): mientras no carga (o si no se puede dibujar) se ve su fuente como
+        // texto. La dibuja la diferida katex.js a partir de data-tex.
+        const t = texto(n.value, n);
+        const bloque = n.type === 'math';
+        /** @type {Record<string, string>} */
+        const a = { class: bloque ? 'formula-bloque' : 'formula', 'data-desde': String(posicionDe(n).desde), 'data-hasta': String(posicionDe(n).hasta) };
+        if (n.value.length <= TEX_MAXIMO) a['data-tex'] = n.value;
+        return [nodo(bloque ? 'div' : 'span', a, [t])];
       }
       case 'inlineCode':
         return [nodo('code', {}, [texto(n.value, n)])];
