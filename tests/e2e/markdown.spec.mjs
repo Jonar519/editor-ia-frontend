@@ -21,6 +21,10 @@ const CARGAS = [
   '[ref][r]\n\n[r]: javascript:window.__xss=11',
   '```js" onmouseover="window.__xss=12\ncodigo\n```',
   '| a | <img src=x onerror="window.__xss=13"> |\n|---|---|\n| 1 | 2 |',
+  // TeX (KaTeX con trust: false): ni enlaces, ni imágenes, ni HTML.
+  '$\\href{javascript:window.__xss=14}{clic}$',
+  '$$\n\\url{javascript:window.__xss=15}\n$$',
+  '$\\includegraphics{https://example.com/x.png}$ y $\\htmlClass{x}{y}$',
 ];
 
 /** La vista renderizada de la lectura. */
@@ -41,12 +45,19 @@ test('batería XSS sobre el DOM real: nada se ejecuta, nada peligroso queda en e
   await page.waitForTimeout(500);
   const resultado = await vista.evaluate((el) => ({
     xss: /** @type {any} */ (window).__xss ?? null,
-    prohibidos: [...el.querySelectorAll('script, img, iframe, svg, style, math, object, embed, details, frame, link, meta, base, form')].map((x) => x.tagName),
+    // Fuera de la salida de KaTeX: nada prohibido. Dentro (su MathML y su SVG), ni enlaces ni cargas.
+    prohibidos: [...el.querySelectorAll('script, img, iframe, svg, style, math, object, embed, details, frame, link, meta, base, form')]
+      .filter((x) => !x.closest('.katex'))
+      .map((x) => x.tagName),
+    enKatex: [...el.querySelectorAll('.katex a, .katex img, .katex script, .katex [href], .katex [src], .katex [xlink\\:href]')].map((x) => x.tagName),
     conOn: [...el.querySelectorAll('*')].flatMap((x) => [...x.attributes].filter((a) => /^on/i.test(a.name)).map((a) => `${x.tagName}[${a.name}]`)),
     enlaces: [...el.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')),
   }));
+  // KaTeX dibujó las fórmulas (con trust: false, sin enlaces ni imágenes).
+  await expect(vista.locator('.katex').first()).toBeVisible();
   expect(resultado.xss).toBeNull();
   expect(resultado.prohibidos).toEqual([]);
+  expect(resultado.enKatex).toEqual([]);
   expect(resultado.conOn).toEqual([]);
   for (const href of resultado.enlaces) expect(href).toMatch(/^(https?:|mailto:|#)/);
 });
@@ -55,7 +66,7 @@ test('vista renderizada en vivo: títulos, tareas, tabla con encabezados, códig
   const servidor = relevo();
   servidor.doc
     .getText('contenido')
-    .insert(0, '# Guía\n\n- [x] hecho\n- [ ] pendiente\n\n| Nombre | Valor |\n|:--|--:|\n| uno | 1 |\n\n```js\nconst x = 1; // nota\n```\n\nTexto con **negrita** y [enlace](https://example.com).');
+    .insert(0, '# Guía\n\n- [x] hecho\n- [ ] pendiente\n\n| Nombre | Valor |\n|:--|--:|\n| uno | 1 |\n\n```js\nconst x = 1; // nota\n```\n\nTexto con **negrita** y [enlace](https://example.com).\n\nÁrea: $\\pi r^2$\n\n$$\nE = mc^2\n$$');
   await abrirDocumento(page, LUCIA, servidor, { vista: 'leer', rol: 'lector' });
   const vista = renderizada(page);
   await expect(vista.getByRole('heading', { level: 1, name: 'Guía' })).toBeVisible();
@@ -65,6 +76,10 @@ test('vista renderizada en vivo: títulos, tareas, tabla con encabezados, códig
   await expect(vista.locator('code.hljs .hljs-keyword')).toHaveText('const'); // resaltado bajo demanda
   await expect(vista.locator('code.hljs .hljs-keyword')).toHaveCSS('color', 'rgb(31, 109, 219)'); // --color-codigo-clave, claro
   await expect(vista.getByRole('link', { name: 'enlace' })).toHaveAttribute('rel', 'noopener noreferrer nofollow ugc');
+  // Fórmulas: KaTeX (bajo demanda) en línea y en bloque, con MathML para los lectores de pantalla.
+  await expect(vista.locator('.formula .katex')).toHaveCount(1);
+  await expect(vista.locator('.formula-bloque .katex-display')).toHaveCount(1);
+  await expect(vista.locator('.formula math')).toHaveCount(1);
   // En vivo: lo que se escribe en el documento aparece renderizado.
   servidor.doc.getText('contenido').insert(0, '## Nuevo\n\n');
   await expect(vista.getByRole('heading', { level: 2, name: 'Nuevo' })).toBeVisible();

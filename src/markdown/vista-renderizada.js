@@ -38,6 +38,15 @@ export function vistaRenderizada(o) {
         () => undefined, // sin el resaltado, el código se ve igual (sin colores)
       );
     }
+    if (el.querySelector('[data-tex]')) {
+      void import('../diferidas/katex.js').then(
+        (m) => {
+          m.dibujarFormulas(el);
+          marcar();
+        },
+        () => undefined, // sin KaTeX, cada fórmula se ve como su fuente
+      );
+    }
   };
   const programar = () => {
     if (pendiente === null) pendiente = setTimeout(dibujar, ESPERA_MS);

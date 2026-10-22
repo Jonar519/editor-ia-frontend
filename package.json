@@ -34,7 +34,10 @@
   "overrides": {
     "playwright-core": "1.63.0",
     "@lezer/markdown": "1.8.0",
-    "@codemirror/autocomplete": "6.20.3"
+    "@codemirror/autocomplete": "6.20.3",
+    "micromark-extension-math": {
+      "katex": "0.19.0"
+    }
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.3",
@@ -46,14 +49,17 @@
     "@fontsource-variable/atkinson-hyperlegible-next": "5.3.0",
     "@fontsource-variable/jetbrains-mono": "5.3.0",
     "highlight.js": "11.12.0",
+    "katex": "0.19.0",
     "lib0": "0.2.119",
     "mdast-util-from-markdown": "2.1.0",
     "mdast-util-gfm-strikethrough": "2.0.1",
     "mdast-util-gfm-table": "2.0.0",
     "mdast-util-gfm-task-list-item": "2.0.0",
+    "mdast-util-math": "3.0.0",
     "micromark-extension-gfm-strikethrough": "2.1.0",
     "micromark-extension-gfm-table": "2.1.2",
     "micromark-extension-gfm-task-list-item": "2.1.0",
+    "micromark-extension-math": "3.1.0",
     "y-codemirror.next": "0.3.6",
     "y-protocols": "1.0.7",
     "yjs": "13.6.33"
