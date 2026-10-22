@@ -683,6 +683,18 @@ h2[tabindex='-1']:focus,
   text-decoration-style: solid;
 }
 
+/* El mismo subrayado en la vista renderizada (cierre de O). */
+.vista-renderizada .comentado {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.vista-renderizada .comentado-activo {
+  text-decoration-style: solid;
+}
+
 /* Diferencia entre versiones: + / − como texto, <ins> subrayado y <del> tachado. */
 .comparar {
   display: flex;

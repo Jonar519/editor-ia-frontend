@@ -44,6 +44,9 @@ export function panelComentarios(o) {
   /** Borradores por clave ("responder:<id>", "editar:<id>") que sobreviven a redibujar. */
   /** @type {Map<string, string>} */
   const borradores = new Map();
+  /** El último tramo elegido, ya como ancla (se usa al publicar aunque la selección se haya perdido). */
+  /** @type {{ ancla: string, cita: string } | null} */
+  let guardada = null;
   /** Citas visibles por hilo, para actualizarlas al editar el texto sin redibujar todo. */
   /** @type {Map<string, HTMLElement>} */
   const citas = new Map();
@@ -100,11 +103,12 @@ export function panelComentarios(o) {
   /** Lo que ve la ayuda del formulario: qué se va a comentar. */
   function actualizarSeleccion() {
     const s = o.seleccion();
-    if (!s) {
-      ayuda.textContent = 'Selecciona un tramo del texto para comentarlo.';
-      return;
+    if (s) {
+      // Se guarda YA como ancla (posiciones relativas): en la vista renderizada, hacer clic en el campo de
+      // comentar (o que llegue un cambio ajeno y se redibuje) borra la selección de la página.
+      guardada = { ancla: codificarAncla(o.vivo.texto, s.inicio, s.fin), cita: cita(o.vivo.texto.toString().slice(s.inicio, s.fin)) };
     }
-    ayuda.textContent = `Vas a comentar: «${cita(o.vivo.texto.toString().slice(s.inicio, s.fin))}»`;
+    ayuda.textContent = guardada ? `Vas a comentar: «${guardada.cita}»` : 'Selecciona un tramo del texto para comentarlo.';
   }
 
   /**
@@ -282,19 +286,22 @@ export function panelComentarios(o) {
 
   form.addEventListener('submit', (ev) => {
     ev.preventDefault();
-    const s = o.seleccion();
+    actualizarSeleccion();
+    const tramo = guardada;
     const cuerpo = nuevo.value.trim();
-    if (!s) return mostrarError('Selecciona un tramo del texto para comentarlo.');
+    if (!tramo) return mostrarError('Selecciona un tramo del texto para comentarlo.');
     if (!cuerpo) return mostrarError('Escribe el comentario.');
     botonComentar.disabled = true;
     api
       .solicitar(`/documentos/${encodeURIComponent(o.documentoId)}/comentarios`, {
         metodo: 'POST',
-        cuerpo: { cuerpo, ancla: codificarAncla(o.vivo.texto, s.inicio, s.fin) },
+        cuerpo: { cuerpo, ancla: tramo.ancla },
       })
       .then(
         (/** @type {Comentario} */ c) => {
           nuevo.value = '';
+          guardada = null;
+          actualizarSeleccion();
           activo = c.id;
           anunciar('Comentario publicado.');
           void cargar();

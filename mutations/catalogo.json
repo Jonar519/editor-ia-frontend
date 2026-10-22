@@ -710,6 +710,33 @@
       "reemplazo": "''",
       "comando": "test",
       "pruebas": ["tests/unitarias/comandos.test.mjs"]
+    },
+    {
+      "id": "O06",
+      "regla": "Anclaje en la vista renderizada: en una pieza exacta, cada carácter corresponde a su posición en la fuente",
+      "archivo": "src/comentarios/posiciones.js",
+      "buscar": "  if (exacta(p)) return p.desde + k;",
+      "reemplazo": "  if (exacta(p)) return p.desde;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/posiciones.test.mjs"]
+    },
+    {
+      "id": "O07",
+      "regla": "Anclaje en la vista renderizada: en una pieza no exacta, el fin se ajusta al final (no al principio)",
+      "archivo": "src/comentarios/posiciones.js",
+      "buscar": "  return lado === 'inicio' ? p.desde : p.hasta;",
+      "reemplazo": "  return p.desde;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/posiciones.test.mjs"]
+    },
+    {
+      "id": "O08",
+      "regla": "Anclaje en la vista renderizada: de la fuente a la vista, el desplazamiento exacto dentro de la pieza",
+      "archivo": "src/comentarios/posiciones.js",
+      "buscar": "  return exacta(p) ? s - p.desde : 0;",
+      "reemplazo": "  return 0;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/posiciones.test.mjs"]
     }
   ]
 }
