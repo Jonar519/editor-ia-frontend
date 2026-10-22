@@ -66,6 +66,7 @@ export function adelantado(doc, vectorServidor) {
  *   alRol?: (rol: string) => void,
  *   alPendiente?: (hay: boolean, cuantos: number) => void,
  *   alRechazados?: () => void,
+ *   alComentarios?: () => void,
  *   sinEnviarInicial?: number,
  *   url?: string,
  *   ventana?: Pick<Window, 'addEventListener' | 'removeEventListener'>,
@@ -236,6 +237,8 @@ export function conectarDocumento(o) {
           reintentoPermiso = false;
           rol = c.rol;
           o.alRol?.(c.rol);
+        } else if (c.tipo === 'comentarios') {
+          o.alComentarios?.();
         }
       }
     };

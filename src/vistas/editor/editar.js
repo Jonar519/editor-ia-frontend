@@ -18,6 +18,8 @@ import { api } from '../../sesion.js';
 import { abrirDocumento } from '../../tiempo-real/documento.js';
 import { indicadorRed } from '../../tiempo-real/estado-red.js';
 import { quienEsta } from '../../tiempo-real/quien-esta.js';
+import { panelComentarios } from '../../comentarios/panel.js';
+import { dibujarMarcas, marcasComentarios } from './marcas-comentarios.js';
 
 const esMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const MOD = esMac ? '⌘' : 'Ctrl';
@@ -44,7 +46,9 @@ export async function render(params) {
   const editable = new Compartment();
   /** @type {EditorView | null} */
   let vista = null;
+  let rolActual = d.rol;
   const ponerRol = (/** @type {string} */ rol) => {
+    rolActual = /** @type {typeof d.rol} */ (rol);
     const puede = escribe(rol);
     soloLectura.hidden = puede;
     vista?.dispatch({ effects: editable.reconfigure([EditorState.readOnly.of(!puede), EditorView.editable.of(puede)]) });
@@ -82,6 +86,8 @@ export async function render(params) {
     ' deshace solo tus cambios.',
   );
   const lugar = h('div', { class: 'editor-documento' });
+  /** @type {ReturnType<typeof panelComentarios> | null} */
+  let panel = null;
   vista = new EditorView({
     parent: lugar,
     state: EditorState.create({
@@ -93,15 +99,45 @@ export async function render(params) {
         EditorView.contentAttributes.of({ 'aria-label': `Contenido de ${d.titulo}`, 'aria-describedby': 'ayuda-editor', 'aria-multiline': 'true' }),
         editable.of([EditorState.readOnly.of(!escribe(d.rol)), EditorView.editable.of(escribe(d.rol))]),
         yCollab(vivo.texto, vivo.presencia, { undoManager: new Y.UndoManager(vivo.texto) }),
+        // Bloque N: las marcas de los comentarios, y la selección para comentarla.
+        marcasComentarios,
+        EditorView.updateListener.of((u) => {
+          if (u.selectionSet) panel?.actualizarSeleccion();
+        }),
       ],
     }),
   });
   soloLectura.hidden = escribe(d.rol);
-  // Al cerrar el documento (cambio de ruta), también el editor.
-  vivo.doc.on('destroy', () => vista?.destroy());
+
+  if (yo) {
+    const v = vista;
+    panel = panelComentarios({
+      documentoId: d.id,
+      vivo,
+      yo,
+      rol: () => rolActual,
+      seleccion: () => {
+        const s = v.state.selection.main;
+        return s.empty ? null : { inicio: s.from, fin: s.to };
+      },
+      alIr: ({ inicio, fin }) => {
+        v.dispatch({ selection: { anchor: inicio, head: fin }, scrollIntoView: true });
+        v.focus();
+      },
+      alMarcas: (marcas) => dibujarMarcas(v, marcas),
+    });
+  }
+  // Al cerrar el documento (cambio de ruta), también el editor y el panel.
+  vivo.doc.on('destroy', () => {
+    panel?.destruir();
+    vista?.destroy();
+  });
 
   pagina.append(red.el, rechazados, soloLectura);
   if (yo) pagina.append(quienEsta(vivo.presencia, yo));
-  pagina.append(ayuda, lugar, h('p', {}, h('a', { href: `#/documentos/${encodeURIComponent(d.id)}` }, 'Ver sin editar')));
+  pagina.append(
+    h('p', { class: 'enlaces-documento' }, h('a', { href: `#/documentos/${encodeURIComponent(d.id)}` }, 'Ver sin editar'), ' · ', h('a', { href: `#/documentos/${encodeURIComponent(d.id)}/versiones` }, 'Historial de versiones')),
+    h('div', { class: 'zona-documento' }, h('div', {}, ayuda, lugar), panel?.el ?? null),
+  );
   return pagina;
 }

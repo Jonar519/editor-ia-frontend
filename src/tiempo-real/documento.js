@@ -88,6 +88,9 @@ export async function abrirDocumento(o) {
     if (a) cola = cola.then(() => a.borrar()).catch(() => undefined);
   };
 
+  /** @type {Set<() => void>} */
+  const oyentesComentarios = new Set();
+
   // El estado local va vacío: el servidor le pone la cuenta y el nombre; el editor, el cursor.
   presencia.setLocalState({});
   const conexion = conectarDocumento({
@@ -104,6 +107,10 @@ export async function abrirDocumento(o) {
       o.alEstado(e);
     },
     alRol: o.alRol,
+    // Los comentarios cambiaron (bloque N): quien los muestra los vuelve a pedir.
+    alComentarios: () => {
+      for (const f of oyentesComentarios) f();
+    },
     sinEnviarInicial,
     alPendiente: (hay, cuantos) => {
       // Cuántos cambios sin enviar, en la copia: salir de la cuenta avisa con ese número.
@@ -132,5 +139,16 @@ export async function abrirDocumento(o) {
   w.addEventListener('hashchange', alCambiarRuta);
   w.addEventListener('pagehide', cerrar);
 
-  return { doc, texto: doc.getText(NOMBRE_TEXTO), presencia, cerrar, guardado: () => cola };
+  return {
+    doc,
+    texto: doc.getText(NOMBRE_TEXTO),
+    presencia,
+    cerrar,
+    guardado: () => cola,
+    /** Avisa cuando los comentarios del documento cambiaron (en otro navegador). Devuelve cómo dejar de oír. */
+    alCambiarComentarios: (/** @type {() => void} */ f) => {
+      oyentesComentarios.add(f);
+      return () => oyentesComentarios.delete(f);
+    },
+  };
 }
