@@ -649,7 +649,32 @@ h2[tabindex='-1']:focus,
   padding: 0 var(--espacio-1);
   font-family: var(--fuente-texto);
   font-size: var(--tamano-pequeno);
+  color: var(--color-sobre-presencia);
   opacity: 1;
+}
+
+.presencia-1 {
+  background-color: var(--color-presencia-1);
+}
+
+.presencia-2 {
+  background-color: var(--color-presencia-2);
+}
+
+.presencia-3 {
+  background-color: var(--color-presencia-3);
+}
+
+.presencia-4 {
+  background-color: var(--color-presencia-4);
+}
+
+.presencia-5 {
+  background-color: var(--color-presencia-5);
+}
+
+.presencia-6 {
+  background-color: var(--color-presencia-6);
 }
 
 .editor-documento .cm-editor .cm-ySelectionCaretDot {
