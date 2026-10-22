@@ -647,6 +647,24 @@
       "reemplazo": "enviar(encoding.toUint8Array(e));",
       "comando": "test",
       "pruebas": ["tests/unitarias/convergencia.test.mjs"]
+    },
+    {
+      "id": "N01",
+      "regla": "Comentarios: el fin del ancla se pega a la izquierda (lo escrito justo después del tramo no entra en él)",
+      "archivo": "src/comentarios/anclas.js",
+      "buscar": "Y.createRelativePositionFromTypeIndex(texto, fin, -1)",
+      "reemplazo": "Y.createRelativePositionFromTypeIndex(texto, fin, 0)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/anclas.test.mjs"]
+    },
+    {
+      "id": "N02",
+      "regla": "Comentarios: un tramo borrado entero queda como texto eliminado (no como un tramo vacío)",
+      "archivo": "src/comentarios/anclas.js",
+      "buscar": "if (!a || !b || b.index <= a.index) return null;",
+      "reemplazo": "if (!a || !b) return null;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/anclas.test.mjs"]
     }
   ]
 }

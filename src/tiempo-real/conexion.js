@@ -64,8 +64,10 @@ export function adelantado(doc, vectorServidor) {
  *   api: ApiMinima,
  *   alEstado: (e: EstadoRed) => void,
  *   alRol?: (rol: string) => void,
- *   alPendiente?: (hay: boolean) => void,
+ *   alPendiente?: (hay: boolean, cuantos: number) => void,
  *   alRechazados?: () => void,
+ *   alComentarios?: () => void,
+ *   sinEnviarInicial?: number,
  *   url?: string,
  *   ventana?: Pick<Window, 'addEventListener' | 'removeEventListener'>,
  *   WebSocket?: typeof WebSocket,
@@ -85,15 +87,21 @@ export function conectarDocumento(o) {
   /** El rol de la conexión ACTUAL (null hasta que el servidor lo dice). */
   /** @type {string | null} */
   let rol = null;
-  /** Hay cambios locales que el servidor quizá no tiene (se escribieron sin conexión). */
-  let pendiente = false;
+  /**
+   * Cambios locales que el servidor quizá no tiene (se escribieron sin conexión): cuántos. Arranca con lo
+   * que quedó de la vez anterior (la copia local lo recuerda).
+   */
+  let sinEnviar = o.sinEnviarInicial ?? 0;
+  let pendiente = sinEnviar > 0;
   /** @type {ReturnType<typeof setTimeout> | null} */
   let temporizador = null;
 
+  /** true: un cambio más sin enviar; false: todo enviado. */
   const ponerPendiente = (/** @type {boolean} */ hay) => {
-    if (pendiente === hay) return;
+    if (!hay && sinEnviar === 0) return;
+    sinEnviar = hay ? sinEnviar + 1 : 0;
     pendiente = hay;
-    o.alPendiente?.(hay);
+    o.alPendiente?.(hay, sinEnviar);
   };
 
   const terminar = (/** @type {EstadoRed} */ estado) => {
@@ -229,6 +237,8 @@ export function conectarDocumento(o) {
           reintentoPermiso = false;
           rol = c.rol;
           o.alRol?.(c.rol);
+        } else if (c.tipo === 'comentarios') {
+          o.alComentarios?.();
         }
       }
     };

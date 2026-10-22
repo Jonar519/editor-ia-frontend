@@ -12,8 +12,7 @@
 // Si IndexedDB no está disponible o falla (modo privado, cuota llena), el editor sigue en memoria y la vista
 // lo dice: lo escrito sin conexión se pierde al cerrar la página.
 import * as Y from 'yjs';
-import { NOMBRE_BASE } from './borrar-local.js';
-const VERSION = 1;
+import { NOMBRE_BASE, SIN_ENVIAR, VERSION_BASE } from './borrar-local.js';
 /** Al cargar, si hay más filas que esto, se juntan en una sola. */
 export const FILAS_PARA_COMPACTAR = 100;
 
@@ -23,7 +22,10 @@ export const FILAS_PARA_COMPACTAR = 100;
  *   guardar: (actualizacion: Uint8Array) => Promise<void>,
  *   reemplazar: (estado: Uint8Array) => Promise<void>,
  *   borrar: () => Promise<void>,
+ *   sinEnviar: () => Promise<number>,
+ *   marcarSinEnviar: (cuantos: number) => Promise<void>,
  * }} Almacen
+ *   sinEnviar: cuántos cambios de este documento no llegaron al servidor (para avisar antes de salir).
  */
 
 /** @param {IDBRequest | IDBTransaction} r */
@@ -42,12 +44,16 @@ function esperar(r) {
 
 /** @param {IDBFactory} idb */
 function abrirBase(idb) {
-  const pedido = idb.open(NOMBRE_BASE, VERSION);
-  pedido.onupgradeneeded = () => {
+  const pedido = idb.open(NOMBRE_BASE, VERSION_BASE);
+  pedido.onupgradeneeded = (ev) => {
     const bd = pedido.result;
-    const cambios = bd.createObjectStore('cambios', { autoIncrement: true });
-    cambios.createIndex('documento', 'documento');
-    bd.createObjectStore('dueno');
+    if (ev.oldVersion < 1) {
+      const cambios = bd.createObjectStore('cambios', { autoIncrement: true });
+      cambios.createIndex('documento', 'documento');
+      bd.createObjectStore('dueno');
+    }
+    // Versión 2 (bloque N): cuántos cambios sin enviar tiene cada documento.
+    if (ev.oldVersion < 2) bd.createObjectStore(SIN_ENVIAR);
   };
   return /** @type {Promise<IDBDatabase>} */ (esperar(pedido)).then((bd) => {
     // Al borrar la base (cerrar sesión), las conexiones abiertas se cierran para no bloquearlo.
@@ -63,11 +69,12 @@ function abrirBase(idb) {
  */
 export async function abrirAlmacen(o) {
   const bd = await abrirBase(o.idb ?? indexedDB);
-  const t = bd.transaction(['cambios', 'dueno'], 'readwrite');
+  const t = bd.transaction(['cambios', 'dueno', SIN_ENVIAR], 'readwrite');
   const pedido = t.objectStore('dueno').get('cuenta');
   pedido.onsuccess = () => {
     if (pedido.result === o.usuarioId) return;
     t.objectStore('cambios').clear();
+    t.objectStore(SIN_ENVIAR).clear();
     t.objectStore('dueno').put(o.usuarioId, 'cuenta');
   };
   await esperar(t);
@@ -113,6 +120,17 @@ export async function abrirAlmacen(o) {
     },
     async borrar() {
       await reescribir(null);
+      await almacen.marcarSinEnviar(0);
+    },
+    async sinEnviar() {
+      const tx = bd.transaction(SIN_ENVIAR, 'readonly');
+      return Number((await esperar(tx.objectStore(SIN_ENVIAR).get(doc))) ?? 0);
+    },
+    async marcarSinEnviar(cuantos) {
+      const tx = bd.transaction(SIN_ENVIAR, 'readwrite');
+      if (cuantos > 0) tx.objectStore(SIN_ENVIAR).put(cuantos, doc);
+      else tx.objectStore(SIN_ENVIAR).delete(doc);
+      await esperar(tx);
     },
   };
   return almacen;

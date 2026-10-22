@@ -7,7 +7,8 @@ import './estilos/base.css';
 import { anunciar } from './componentes/anunciar.js';
 import { iniciarRouter } from './router.js';
 import { RUTAS } from './rutas.js';
-import { api, cerrarSesion, recordarDestino, restaurarSesion, sesionParaRouter } from './sesion.js';
+import { salirConAviso } from './componentes/salir.js';
+import { api, recordarDestino, restaurarSesion, sesionParaRouter } from './sesion.js';
 import { registrarServiceWorker } from './sw/registrar.js';
 
 const raiz = document.getElementById('contenido');
@@ -25,7 +26,9 @@ function actualizarNavegacion() {
 }
 
 document.querySelector('[data-salir]')?.addEventListener('click', () => {
-  void cerrarSesion().then(() => {
+  // Si hay cambios sin enviar, pregunta antes (salirConAviso); si se cancela, no pasa nada.
+  void salirConAviso().then((salio) => {
+    if (!salio) return;
     anunciar('Cerraste la sesión.');
     window.location.hash = '#/';
   });

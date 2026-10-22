@@ -26,7 +26,7 @@ const DE_LA_COPIA = Symbol('copia-local');
  *   documentoId: string,
  *   alEstado: (e: import('./conexion.js').EstadoRed) => void,
  *   alRol?: (rol: string) => void,
- *   alPendiente?: (hay: boolean) => void,
+ *   alPendiente?: (hay: boolean, cuantos: number) => void,
  *   alCopia?: (e: EstadoCopia) => void,
  *   alRechazados?: () => void,
  *   persistir?: { usuarioId: string },
@@ -56,9 +56,11 @@ export async function abrirDocumento(o) {
     almacen = null;
     o.alCopia?.('copia-fallo');
   };
+  let sinEnviarInicial = 0;
   if (o.persistir) {
     try {
       almacen = await (deps.abrirAlmacen ?? abrirAlmacen)({ usuarioId: o.persistir.usuarioId, documentoId: o.documentoId });
+      sinEnviarInicial = await almacen.sinEnviar();
       const guardadas = await almacen.cargar();
       Y.transact(doc, () => {
         for (const u of guardadas) Y.applyUpdate(doc, u, DE_LA_COPIA);
@@ -86,6 +88,9 @@ export async function abrirDocumento(o) {
     if (a) cola = cola.then(() => a.borrar()).catch(() => undefined);
   };
 
+  /** @type {Set<() => void>} */
+  const oyentesComentarios = new Set();
+
   // El estado local va vacío: el servidor le pone la cuenta y el nombre; el editor, el cursor.
   presencia.setLocalState({});
   const conexion = conectarDocumento({
@@ -102,7 +107,17 @@ export async function abrirDocumento(o) {
       o.alEstado(e);
     },
     alRol: o.alRol,
-    alPendiente: o.alPendiente,
+    // Los comentarios cambiaron (bloque N): quien los muestra los vuelve a pedir.
+    alComentarios: () => {
+      for (const f of oyentesComentarios) f();
+    },
+    sinEnviarInicial,
+    alPendiente: (hay, cuantos) => {
+      // Cuántos cambios sin enviar, en la copia: salir de la cuenta avisa con ese número.
+      const a = almacen;
+      if (a) cola = cola.then(() => a.marcarSinEnviar(cuantos)).catch(fallo);
+      o.alPendiente?.(hay, cuantos);
+    },
     alRechazados: () => {
       olvidarCopia();
       o.alRechazados?.();
@@ -124,5 +139,16 @@ export async function abrirDocumento(o) {
   w.addEventListener('hashchange', alCambiarRuta);
   w.addEventListener('pagehide', cerrar);
 
-  return { doc, texto: doc.getText(NOMBRE_TEXTO), presencia, cerrar, guardado: () => cola };
+  return {
+    doc,
+    texto: doc.getText(NOMBRE_TEXTO),
+    presencia,
+    cerrar,
+    guardado: () => cola,
+    /** Avisa cuando los comentarios del documento cambiaron (en otro navegador). Devuelve cómo dejar de oír. */
+    alCambiarComentarios: (/** @type {() => void} */ f) => {
+      oyentesComentarios.add(f);
+      return () => oyentesComentarios.delete(f);
+    },
+  };
 }

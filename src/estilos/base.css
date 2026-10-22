@@ -587,6 +587,158 @@ h2[tabindex='-1']:focus,
   margin: 0;
 }
 
+/* ─── Versiones y comentarios (bloque N): sin colores nuevos ─────────────── */
+
+.enlaces-documento {
+  margin: 0 0 var(--espacio-4);
+}
+
+/* El documento y, al lado (en pantallas anchas), los comentarios. */
+.zona-documento {
+  display: grid;
+  gap: var(--espacio-6);
+}
+
+@media (min-width: 64rem) {
+  .zona-documento {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+
+.comentarios h2 {
+  margin-top: 0;
+  font-size: var(--tamano-base);
+}
+
+.comentarios textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  color: var(--color-texto);
+  background-color: var(--color-superficie);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: var(--radio);
+}
+
+.comentar label,
+.comentar-chico label {
+  display: block;
+  font-weight: 700;
+}
+
+.hilo {
+  margin: var(--espacio-4) 0;
+  padding: var(--espacio-3);
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+/* El hilo elegido: borde de control (más visible), además del subrayado sólido en el texto. */
+.hilo-activo {
+  border: 2px solid;
+  border-color: var(--color-borde-control);
+}
+
+.hilo-titulo {
+  margin: 0 0 var(--espacio-2);
+  font-size: var(--tamano-pequeno);
+}
+
+.cita {
+  margin: 0 0 var(--espacio-2);
+  padding-left: var(--espacio-3);
+  border-left: 3px solid var(--color-borde);
+  font-family: var(--fuente-codigo);
+  font-size: var(--tamano-pequeno);
+  overflow-wrap: anywhere;
+}
+
+.comentario + .comentario {
+  margin-left: var(--espacio-4);
+}
+
+.comentario-autor {
+  margin: 0;
+  font-size: var(--tamano-pequeno);
+}
+
+.comentario-cuerpo {
+  margin: var(--espacio-1) 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Texto comentado en el editor: subrayado con el color del texto (punteado; sólido en el hilo elegido). */
+.editor-documento .cm-editor .comentado {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.editor-documento .cm-editor .comentado-activo {
+  text-decoration-style: solid;
+}
+
+/* Diferencia entre versiones: + / − como texto, <ins> subrayado y <del> tachado. */
+.comparar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-4);
+  align-items: end;
+}
+
+.diferencia {
+  margin: var(--espacio-4) 0;
+  padding: var(--espacio-3);
+  list-style: none;
+  font-family: var(--fuente-codigo);
+  font-size: var(--tamano-pequeno);
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  overflow-x: auto;
+}
+
+.diferencia li {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.diferencia .marca {
+  display: inline-block;
+  width: 1.5em;
+  font-weight: 700;
+}
+
+.linea-agregada,
+.linea-quitada {
+  font-weight: 700;
+}
+
+.linea-resumen {
+  font-style: italic;
+}
+
+/* Diálogo modal (salir con cambios sin enviar). El fondo detrás es el del navegador. */
+.dialogo {
+  max-width: 32rem;
+  padding: var(--espacio-6);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: var(--radio);
+}
+
+.dialogo h2 {
+  margin-top: 0;
+  font-size: var(--tamano-base);
+}
+
 .quien-esta {
   margin: 0 0 var(--espacio-4);
 }
@@ -613,15 +765,22 @@ h2[tabindex='-1']:focus,
   border-radius: 50%;
 }
 
-/* El Markdown como texto (hasta la vista renderizada del bloque O). */
+/* El Markdown como texto, en un textarea de solo lectura (hasta la vista renderizada del bloque O). El
+   borde es de control: se puede enfocar y seleccionar con el teclado. */
 .documento-texto {
+  width: 100%;
+  box-sizing: border-box;
   margin: 0;
   padding: var(--espacio-4);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  font-family: var(--fuente-codigo);
+  font-size: var(--tamano-base);
+  line-height: var(--interlineado);
+  color: var(--color-texto);
   background-color: var(--color-superficie);
-  border: 1px solid var(--color-borde);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
   border-radius: var(--radio);
+  resize: vertical;
 }
 
 .editor-documento .cm-editor {
