@@ -22,6 +22,9 @@ test('comentarios anclados: una lectora comenta con el teclado, el ancla sigue a
 
     await comentarios.registrar(pageL, LUCIA, 'lector');
     await abrirDocumento(pageL, LUCIA, servidor, { vista: 'leer', rol: 'lector' });
+    // Desde O, la lectura abre en la vista renderizada; el tramo se elige en el texto fuente.
+    await pageL.getByRole('button', { name: 'Ver el texto fuente' }).click();
+    await expect(pageL.getByRole('button', { name: 'Ver el texto fuente' })).toHaveAttribute('aria-pressed', 'true');
     await expect(lectura(pageL)).toHaveValue('Introducción al tema');
 
     // La lectura no se deja editar (escribir, borrar ni pegar no cambia el texto).

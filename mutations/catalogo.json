@@ -665,6 +665,51 @@
       "reemplazo": "if (!a || !b) return null;",
       "comando": "test",
       "pruebas": ["tests/unitarias/anclas.test.mjs"]
+    },
+    {
+      "id": "O01",
+      "regla": "Vista renderizada: un enlace solo con protocolo http, https o mailto (o un ancla)",
+      "archivo": "src/markdown/vista.js",
+      "buscar": "    return PROTOCOLOS.includes(new URL(url).protocol);",
+      "reemplazo": "    return Boolean(new URL(url).protocol);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/xss.test.mjs"]
+    },
+    {
+      "id": "O02",
+      "regla": "Vista renderizada: el HTML escrito se ve como texto literal (no se borra en silencio)",
+      "archivo": "src/markdown/vista.js",
+      "buscar": "        return [nodo('span', { class: 'html-literal' }, [texto(n.value, n)])];",
+      "reemplazo": "        return [nodo('span', { class: 'html-literal' }, [])];",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/xss.test.mjs"]
+    },
+    {
+      "id": "O03",
+      "regla": "Vista renderizada: la segunda capa quita todo elemento fuera de la lista blanca",
+      "archivo": "src/markdown/vista.js",
+      "buscar": "  if (!Object.hasOwn(PERMITIDOS, n.e)) return hijos;",
+      "reemplazo": "  if (false) return hijos;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/xss.test.mjs"]
+    },
+    {
+      "id": "O04",
+      "regla": "Vista renderizada: la segunda capa quita todo atributo (o valor) fuera de la lista blanca",
+      "archivo": "src/markdown/vista.js",
+      "buscar": "    if (v !== null) a[nombre] = v;",
+      "reemplazo": "    a[nombre] = String(valor);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/xss.test.mjs"]
+    },
+    {
+      "id": "O05",
+      "regla": "Editor: un bloque insertado lleva una línea en blanco antes (si no, se pega a la lista o al párrafo)",
+      "archivo": "src/vistas/editor/comandos.js",
+      "buscar": "anterior.trim() !== '' ? '\\n' : ''",
+      "reemplazo": "''",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/comandos.test.mjs"]
     }
   ]
 }
