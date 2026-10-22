@@ -26,9 +26,13 @@ export async function render(params) {
   const yo = api.usuario();
   titulo.textContent = d.titulo;
   const red = indicadorRed();
-  // Bloque N: un textarea de SOLO LECTURA, no un <pre>, para que el tramo a comentar se pueda seleccionar
-  // también con el teclado (Mayús + flechas) y dé sus posiciones exactas.
-  const texto = h('textarea', { class: 'documento-texto', readonly: true, rows: '12', 'aria-label': `Contenido de ${d.titulo}`, spellcheck: 'false' });
+  // Bloque N: un textarea que no se deja editar, no un <pre>, para que el tramo a comentar se pueda
+  // seleccionar también con el teclado (Mayús + flechas) y dé sus posiciones exactas. NO lleva el atributo
+  // readonly: en Chromium, un textarea readonly no mueve el cursor ni selecciona con el teclado (medido en
+  // el E2E). Se marca aria-readonly y se rechaza toda edición (beforeinput); lo que no se puede cancelar
+  // (una composición de IME en Chrome) se deshace al llegar (input).
+  const texto = h('textarea', { class: 'documento-texto', 'aria-readonly': 'true', rows: '12', 'aria-label': `Contenido de ${d.titulo}`, spellcheck: 'false' });
+  texto.addEventListener('beforeinput', (ev) => ev.preventDefault());
   const vacio = h('p', { class: 'vacio' }, 'Este documento está vacío.');
   // Quien lee no guarda copia en el dispositivo (no tiene cambios propios que conservar).
   red.poner('conectando');
@@ -43,6 +47,7 @@ export async function render(params) {
     vacio.hidden = t.length > 0;
   };
   vivo.texto.observe(dibujar);
+  texto.addEventListener('input', dibujar);
   dibujar();
   pagina.append(red.el);
   pagina.append(
@@ -71,8 +76,15 @@ export async function render(params) {
       alMarcas: () => undefined, // en el textarea no se dibujan: el panel muestra cada tramo
     });
     const p = panel;
-    for (const ev of ['select', 'keyup', 'mouseup']) texto.addEventListener(ev, () => p.actualizarSeleccion());
-    vivo.doc.on('destroy', () => p.destruir());
+    // La selección del textarea cambia con el ratón y con el teclado; según el navegador, avisa con uno u
+    // otro de estos eventos.
+    const alSeleccionar = () => p.actualizarSeleccion();
+    for (const ev of ['select', 'selectionchange', 'keyup', 'mouseup']) texto.addEventListener(ev, alSeleccionar);
+    document.addEventListener('selectionchange', alSeleccionar);
+    vivo.doc.on('destroy', () => {
+      document.removeEventListener('selectionchange', alSeleccionar);
+      p.destruir();
+    });
   }
   pagina.append(h('div', { class: 'zona-documento' }, h('div', {}, vacio, texto), panel?.el ?? null));
   return pagina;

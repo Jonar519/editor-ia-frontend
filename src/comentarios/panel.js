@@ -311,7 +311,18 @@ export function panelComentarios(o) {
   });
 
   const dejarDeOir = o.vivo.alCambiarComentarios(() => void cargar());
-  const alEditar = () => actualizarCitas();
+  // El texto cambia DENTRO de una actualización del editor (y-codemirror aplica el cambio local al Y.Text
+  // mientras CodeMirror actualiza): dibujar las marcas ahí mismo sería otro dispatch en medio del primero,
+  // que CodeMirror rechaza (y rompe la sincronía). Se dibuja después, una vez por tanda de cambios.
+  let programado = false;
+  const alEditar = () => {
+    if (programado) return;
+    programado = true;
+    queueMicrotask(() => {
+      programado = false;
+      actualizarCitas();
+    });
+  };
   o.vivo.texto.observe(alEditar);
   actualizarSeleccion();
   void cargar();

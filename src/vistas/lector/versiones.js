@@ -35,7 +35,12 @@ const descripcion = (v) =>
 export function vistaDiferencia(ops) {
   const agregadas = ops.filter((o) => o.tipo === 'agregar').reduce((n, o) => n + o.lineas.length, 0);
   const quitadas = ops.filter((o) => o.tipo === 'quitar').reduce((n, o) => n + o.lineas.length, 0);
-  const resumen = h('p', { class: 'diferencia-resumen', role: 'status' }, agregadas + quitadas === 0 ? 'No hay diferencias.' : `${String(agregadas)} líneas agregadas y ${String(quitadas)} quitadas.`);
+  const lineas = (/** @type {number} */ n, /** @type {string} */ que) => `${String(n)} ${n === 1 ? `línea ${que}` : `líneas ${que}s`}`;
+  const resumen = h(
+    'p',
+    { class: 'diferencia-resumen', role: 'status' },
+    agregadas + quitadas === 0 ? 'No hay diferencias.' : `${lineas(agregadas, 'agregada')} y ${lineas(quitadas, 'quitada')}.`,
+  );
   const lista = h('ol', { class: 'diferencia', 'aria-label': 'Diferencias por línea' });
   const linea = (/** @type {'igual' | 'quitar' | 'agregar'} */ tipo, /** @type {string} */ texto) => {
     const contenido = texto.replace(/\r?\n$/, '');
