@@ -9,6 +9,7 @@ import { indicadorRed } from '../../tiempo-real/estado-red.js';
 import { quienEsta } from '../../tiempo-real/quien-esta.js';
 import { panelComentarios } from '../../comentarios/panel.js';
 import { vistaRenderizada } from '../../markdown/vista-renderizada.js';
+import { fuenteARango, seleccionAFuente } from '../../comentarios/posiciones.js';
 import { puedeEditar } from './documentos.js';
 
 /** @param {Record<string, string>} params */
@@ -51,9 +52,10 @@ export async function render(params) {
   texto.addEventListener('input', dibujar);
   dibujar();
 
-  // Bloque O: se lee la vista RENDERIZADA; el texto fuente (donde hoy se elige el tramo a comentar) queda
-  // a un botón de distancia.
-  const renderizada = vistaRenderizada({ texto: vivo.texto, etiqueta: `Documento ${d.titulo}` });
+  // Bloque O: se lee la vista RENDERIZADA. Un tramo se comenta seleccionándolo ahí con el ratón o el dedo;
+  // con el teclado, en el texto fuente (a un botón de distancia; la ayuda lo dice y se anuncia al entrar a
+  // la vista).
+  const renderizada = vistaRenderizada({ texto: vivo.texto, etiqueta: `Documento ${d.titulo}`, descripcion: 'ayuda-lectura' });
   const fuente = h('div', { hidden: true }, vacio, texto);
   const alternar = h('button', { type: 'button', class: 'boton boton-chico', 'aria-pressed': 'false' }, 'Ver el texto fuente');
   const verFuente = (/** @type {boolean} */ si) => {
@@ -82,13 +84,27 @@ export async function render(params) {
       vivo,
       yo,
       rol: () => d.rol,
-      seleccion: () => (texto.selectionStart < texto.selectionEnd ? { inicio: texto.selectionStart, fin: texto.selectionEnd } : null),
-      alIr: ({ inicio, fin }) => {
-        verFuente(true);
-        texto.focus();
-        texto.setSelectionRange(inicio, fin);
+      seleccion: () => {
+        if (!fuente.hidden) return texto.selectionStart < texto.selectionEnd ? { inicio: texto.selectionStart, fin: texto.selectionEnd } : null;
+        return seleccionAFuente(renderizada.el);
       },
-      alMarcas: () => undefined, // en el textarea no se dibujan: el panel muestra cada tramo
+      alIr: ({ inicio, fin }) => {
+        if (!fuente.hidden) {
+          texto.focus();
+          texto.setSelectionRange(inicio, fin);
+          return;
+        }
+        // En la vista renderizada: seleccionar el tramo y llevarlo a la vista.
+        const rango = fuenteARango(renderizada.el, inicio, fin);
+        if (!rango) return;
+        renderizada.el.focus({ preventScroll: true });
+        const sel = document.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(rango);
+        rango.startContainer.parentElement?.scrollIntoView({ block: 'center' });
+      },
+      // Subrayados en la vista renderizada (en el texto fuente no se dibujan: el panel muestra cada tramo).
+      alMarcas: (marcas) => renderizada.ponerMarcas(marcas),
     });
     const p = panel;
     // La selección del textarea cambia con el ratón y con el teclado; según el navegador, avisa con uno u
@@ -108,7 +124,13 @@ export async function render(params) {
       h(
         'div',
         {},
-        h('p', { class: 'acciones' }, alternar, ' ', h('span', { class: 'ayuda' }, 'Para comentar un tramo, elígelo en el texto fuente.')),
+        h(
+          'p',
+          { class: 'acciones' },
+          alternar,
+          ' ',
+          h('span', { id: 'ayuda-lectura', class: 'ayuda' }, 'Para comentar, selecciona un tramo con el ratón o el dedo. Con el teclado, usa «Ver el texto fuente».'),
+        ),
         renderizada.el,
         fuente,
       ),

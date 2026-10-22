@@ -90,6 +90,18 @@
   --paleta-presencia-rosa-sel: #f8d0da;
   --paleta-presencia-rosa-sel-noche: #542434;
 
+  /* Resaltado de código (bloque O): texto sobre el fondo del bloque de código. Sin violeta ni rojo. */
+  --paleta-codigo-azul: #1f6ddb;
+  --paleta-codigo-azul-noche: #3b81e3;
+  --paleta-codigo-verde: #17823b;
+  --paleta-codigo-verde-noche: #1b9844;
+  --paleta-codigo-ambar: #9c6211;
+  --paleta-codigo-ambar-noche: #b87414;
+  --paleta-codigo-cian: #147a8f;
+  --paleta-codigo-cian-noche: #188ea5;
+  --paleta-codigo-naranja: #bb501b;
+  --paleta-codigo-naranja-noche: #db5e1f;
+
   /* ─── Significados, tema claro ────────────────────────────────────────────── */
   --color-fondo: var(--paleta-gris-50);
   --color-superficie: var(--paleta-blanco);
@@ -128,6 +140,12 @@
   --color-presencia-5-seleccion: var(--paleta-presencia-naranja-sel);
   --color-presencia-6-seleccion: var(--paleta-presencia-rosa-sel);
   --color-sobre-presencia: var(--paleta-blanco);
+
+  --color-codigo-clave: var(--paleta-codigo-azul);
+  --color-codigo-cadena: var(--paleta-codigo-verde);
+  --color-codigo-numero: var(--paleta-codigo-ambar);
+  --color-codigo-titulo: var(--paleta-codigo-cian);
+  --color-codigo-tipo: var(--paleta-codigo-naranja);
 
   /* ─── Tipografía, espacio, forma y movimiento (iguales en los dos temas) ──── */
   /* Fuentes AUTOALOJADAS (src/main.js las importa de @fontsource-variable, licencia SIL OFL 1.1): se sirven
@@ -195,5 +213,11 @@
     --color-presencia-5-seleccion: var(--paleta-presencia-naranja-sel-noche);
     --color-presencia-6-seleccion: var(--paleta-presencia-rosa-sel-noche);
     --color-sobre-presencia: var(--paleta-gris-950);
+
+    --color-codigo-clave: var(--paleta-codigo-azul-noche);
+    --color-codigo-cadena: var(--paleta-codigo-verde-noche);
+    --color-codigo-numero: var(--paleta-codigo-ambar-noche);
+    --color-codigo-titulo: var(--paleta-codigo-cian-noche);
+    --color-codigo-tipo: var(--paleta-codigo-naranja-noche);
   }
 }
