@@ -32,6 +32,8 @@ export const RUTAS = [
   { patron: '/documentos', grupo: 'lector', titulo: 'Documentos', cargar: () => import('./vistas/lector/documentos.js') },
   // Leer un documento: sin CodeMirror (solo Yjs). Editarlo es del grupo editor (más abajo).
   { patron: '/documentos/:id', grupo: 'lector', titulo: 'Documento', cargar: () => import('./vistas/lector/documento.js') },
+  // Historial (bloque N): cualquier rol lo ve; guardar y restaurar, editor o propietario (lo decide el API).
+  { patron: '/documentos/:id/versiones', grupo: 'lector', titulo: 'Historial de versiones', cargar: () => import('./vistas/lector/versiones.js') },
   // "Tu cuenta": todos los roles. Cada sección es su propio archivo (se mide por separado).
   { patron: '/cuenta', grupo: 'lector', titulo: 'Tu cuenta', cargar: () => import('./vistas/lector/cuenta.js') },
   { patron: '/cuenta/foto', grupo: 'lector', titulo: 'Foto de perfil', cargar: () => import('./vistas/lector/foto.js') },
