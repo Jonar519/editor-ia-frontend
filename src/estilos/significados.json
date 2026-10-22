@@ -35,7 +35,12 @@
     "--color-presencia-4-seleccion": { "significado": "Selección de la persona con el color 4.", "usos": ["background-color"] },
     "--color-presencia-5-seleccion": { "significado": "Selección de la persona con el color 5.", "usos": ["background-color"] },
     "--color-presencia-6-seleccion": { "significado": "Selección de la persona con el color 6.", "usos": ["background-color"] },
-    "--color-sobre-presencia": { "significado": "Texto de la etiqueta con el nombre, SOBRE un color de presencia.", "usos": ["color"] }
+    "--color-sobre-presencia": { "significado": "Texto de la etiqueta con el nombre, SOBRE un color de presencia.", "usos": ["color"] },
+    "--color-codigo-clave": { "significado": "Código resaltado: palabras clave del lenguaje (if, const, return...). Solo dentro de bloques de código.", "usos": ["color"] },
+    "--color-codigo-cadena": { "significado": "Código resaltado: cadenas y expresiones regulares.", "usos": ["color"] },
+    "--color-codigo-numero": { "significado": "Código resaltado: números y literales (true, null...).", "usos": ["color"] },
+    "--color-codigo-titulo": { "significado": "Código resaltado: nombres de funciones, clases y secciones, y funciones propias del lenguaje.", "usos": ["color"] },
+    "--color-codigo-tipo": { "significado": "Código resaltado: tipos, atributos y variables.", "usos": ["color"] }
   },
   "estados": ["--color-acento", "--color-info", "--color-exito", "--color-aviso", "--color-peligro"],
   "pares": [
@@ -83,6 +88,16 @@
     { "texto": "--color-presencia-6", "fondo": "--color-superficie", "minimo": 3, "nota": "cursor sobre el editor" },
     { "texto": "--color-presencia-6", "fondo": "--color-fondo", "minimo": 3, "nota": "muestra en «Aquí ahora»" },
     { "texto": "--color-sobre-presencia", "fondo": "--color-presencia-6", "minimo": 4.5 },
-    { "texto": "--color-texto", "fondo": "--color-presencia-6-seleccion", "minimo": 4.5 }
+    { "texto": "--color-texto", "fondo": "--color-presencia-6-seleccion", "minimo": 4.5 },
+    { "texto": "--color-codigo-clave", "fondo": "--color-fondo", "minimo": 4.5, "nota": "fondo del bloque de código" },
+    { "texto": "--color-codigo-clave", "fondo": "--color-superficie", "minimo": 4.5 },
+    { "texto": "--color-codigo-cadena", "fondo": "--color-fondo", "minimo": 4.5, "nota": "fondo del bloque de código" },
+    { "texto": "--color-codigo-cadena", "fondo": "--color-superficie", "minimo": 4.5 },
+    { "texto": "--color-codigo-numero", "fondo": "--color-fondo", "minimo": 4.5, "nota": "fondo del bloque de código" },
+    { "texto": "--color-codigo-numero", "fondo": "--color-superficie", "minimo": 4.5 },
+    { "texto": "--color-codigo-titulo", "fondo": "--color-fondo", "minimo": 4.5, "nota": "fondo del bloque de código" },
+    { "texto": "--color-codigo-titulo", "fondo": "--color-superficie", "minimo": 4.5 },
+    { "texto": "--color-codigo-tipo", "fondo": "--color-fondo", "minimo": 4.5, "nota": "fondo del bloque de código" },
+    { "texto": "--color-codigo-tipo", "fondo": "--color-superficie", "minimo": 4.5 }
   ]
 }

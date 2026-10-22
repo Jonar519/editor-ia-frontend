@@ -792,14 +792,45 @@ h2[tabindex='-1']:focus,
   font-style: italic;
 }
 
-/* Resaltado de código: por ahora sin colores (esperan su aprobación); solo peso y estilo. */
+/* Resaltado de código (colores aprobados al cerrar O): el color nunca es el único medio, también hay peso
+   y estilo. */
 .markdown .hljs-keyword,
-.markdown .hljs-built_in,
-.markdown .hljs-title {
+.markdown .hljs-selector-tag,
+.markdown .hljs-meta .hljs-keyword {
+  color: var(--color-codigo-clave);
   font-weight: 700;
 }
 
-.markdown .hljs-comment {
+.markdown .hljs-string,
+.markdown .hljs-regexp,
+.markdown .hljs-char {
+  color: var(--color-codigo-cadena);
+}
+
+.markdown .hljs-number,
+.markdown .hljs-literal,
+.markdown .hljs-symbol {
+  color: var(--color-codigo-numero);
+}
+
+.markdown .hljs-title,
+.markdown .hljs-section,
+.markdown .hljs-built_in {
+  color: var(--color-codigo-titulo);
+  font-weight: 700;
+}
+
+.markdown .hljs-type,
+.markdown .hljs-attr,
+.markdown .hljs-attribute,
+.markdown .hljs-variable,
+.markdown .hljs-params {
+  color: var(--color-codigo-tipo);
+}
+
+.markdown .hljs-comment,
+.markdown .hljs-quote {
+  color: var(--color-texto-suave);
   font-style: italic;
 }
 

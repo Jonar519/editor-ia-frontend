@@ -63,6 +63,7 @@ test('vista renderizada en vivo: títulos, tareas, tabla con encabezados, códig
   await expect(vista.getByRole('checkbox', { name: 'Tarea pendiente' })).not.toBeChecked();
   await expect(vista.getByRole('columnheader')).toHaveText(['Nombre', 'Valor']);
   await expect(vista.locator('code.hljs .hljs-keyword')).toHaveText('const'); // resaltado bajo demanda
+  await expect(vista.locator('code.hljs .hljs-keyword')).toHaveCSS('color', 'rgb(31, 109, 219)'); // --color-codigo-clave, claro
   await expect(vista.getByRole('link', { name: 'enlace' })).toHaveAttribute('rel', 'noopener noreferrer nofollow ugc');
   // En vivo: lo que se escribe en el documento aparece renderizado.
   servidor.doc.getText('contenido').insert(0, '## Nuevo\n\n');
@@ -75,6 +76,7 @@ test('vista renderizada en vivo: títulos, tareas, tabla con encabezados, códig
     await oscura.route('**/api/**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
     await abrirDocumento(oscura, LUCIA, servidor, { vista: 'leer', rol: 'lector' });
     await expect(renderizada(oscura).locator('code.hljs .hljs-keyword')).toHaveText('const');
+    await expect(renderizada(oscura).locator('code.hljs .hljs-keyword')).toHaveCSS('color', 'rgb(59, 129, 227)'); // oscuro
     expect(await axeEstable(oscura)).toEqual([]);
   } finally {
     await contexto.close();
