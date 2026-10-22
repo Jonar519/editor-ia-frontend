@@ -30,6 +30,8 @@ export const RUTAS = [
   { patron: '/correo/:token', grupo: 'publico', titulo: 'Confirmar tu nuevo correo', cargar: () => import('./vistas/publico/correo.js') },
   { patron: '/cuenta-eliminada', grupo: 'publico', titulo: 'Cuenta eliminada', cargar: () => import('./vistas/publico/cuenta-eliminada.js') },
   { patron: '/documentos', grupo: 'lector', titulo: 'Documentos', cargar: () => import('./vistas/lector/documentos.js') },
+  // Leer un documento: sin CodeMirror (solo Yjs). Editarlo es del grupo editor (más abajo).
+  { patron: '/documentos/:id', grupo: 'lector', titulo: 'Documento', cargar: () => import('./vistas/lector/documento.js') },
   // "Tu cuenta": todos los roles. Cada sección es su propio archivo (se mide por separado).
   { patron: '/cuenta', grupo: 'lector', titulo: 'Tu cuenta', cargar: () => import('./vistas/lector/cuenta.js') },
   { patron: '/cuenta/foto', grupo: 'lector', titulo: 'Foto de perfil', cargar: () => import('./vistas/lector/foto.js') },

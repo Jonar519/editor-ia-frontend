@@ -15,7 +15,8 @@ const servidor = {
   host: '127.0.0.1',
   port: 5175,
   strictPort: true,
-  proxy: { '/api': { target: api, changeOrigin: false } },
+  // ws: también el WebSocket de /api/tiempo-real (bloque L), en el mismo origen.
+  proxy: { '/api': { target: api, changeOrigin: false, ws: true } },
 };
 
 /**
