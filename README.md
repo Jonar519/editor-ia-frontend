@@ -201,3 +201,13 @@ Los topes viven en `presupuestos.json`:
 
 - Sin `innerHTML`: los nodos se crean con `h()` (`src/dom.js`), el texto entra como texto y los atributos `on*` se rechazan.
 - `<meta name="referrer" content="no-referrer">`.
+- **Vista renderizada del Markdown (bloque O, `src/markdown/vista.js`):**
+  - el Markdown pasa por mdast con posiciones (micromark con tablas, tachado y tareas de GFM), **sin HTML**: el HTML escrito se ve como texto literal;
+  - primera capa: solo se generan elementos y atributos de la lista `PERMITIDOS`;
+  - segunda capa (`sanear`): vuelve a filtrar por la lista blanca, independiente de la primera;
+  - enlaces solo `http`, `https`, `mailto` o un ancla `#…`, con `rel="noopener noreferrer nofollow ugc"`;
+  - las imágenes **no se cargan** (un servidor ajeno vería quién lee): quedan como enlace con su descripción;
+  - los títulos no llevan `id` (evita el *DOM clobbering*);
+  - el DOM se construye con `createElement` y `createTextNode`;
+  - el resaltado (`src/diferidas/highlight.js`) analiza el HTML de highlight.js en un documento aparte y copia solo `<span class="hljs-…">` y texto.
+  - Pruebas: batería XSS unitaria (26 cargas, y la segunda capa sola) y E2E sobre el DOM real (13 cargas que marcarían `window` si se ejecutaran), con las mutaciones O01–O04.
