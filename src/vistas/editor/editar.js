@@ -50,8 +50,24 @@ export async function render(params) {
     vista?.dispatch({ effects: editable.reconfigure([EditorState.readOnly.of(!puede), EditorView.editable.of(puede)]) });
   };
 
-  const vivo = abrirDocumento({ documentoId: d.id, alEstado: red.poner, alRol: ponerRol });
+  // Bloque M: si el permiso bajó a lectura mientras había cambios sin conexión, no se guardaron. Se dice.
+  const rechazados = h(
+    'div',
+    { hidden: true },
+    aviso('error', 'Los cambios que hiciste sin conexión no se guardaron: tu permiso ahora es de solo lectura. Recarga la página para ver la versión guardada.'),
+  );
   red.poner('conectando');
+  const vivo = await abrirDocumento({
+    documentoId: d.id,
+    alEstado: red.poner,
+    alRol: ponerRol,
+    alPendiente: red.ponerPendiente,
+    alCopia: red.ponerCopia,
+    alRechazados: () => {
+      rechazados.hidden = false;
+    },
+    persistir: yo ? { usuarioId: yo.id } : undefined,
+  });
   const ayuda = h(
     'p',
     { id: 'ayuda-editor', class: 'ayuda' },
@@ -84,7 +100,7 @@ export async function render(params) {
   // Al cerrar el documento (cambio de ruta), también el editor.
   vivo.doc.on('destroy', () => vista?.destroy());
 
-  pagina.append(red.el, soloLectura);
+  pagina.append(red.el, rechazados, soloLectura);
   if (yo) pagina.append(quienEsta(vivo.presencia, yo));
   pagina.append(ayuda, lugar, h('p', {}, h('a', { href: `#/documentos/${encodeURIComponent(d.id)}` }, 'Ver sin editar')));
   return pagina;
