@@ -7,7 +7,7 @@ import * as encoding from 'lib0/encoding';
 import { applyAwarenessUpdate, Awareness, encodeAwarenessUpdate } from 'y-protocols/awareness';
 import { readSyncMessage, writeSyncStep1 } from 'y-protocols/sync';
 import * as Y from 'yjs';
-import { cuerpoError, expect, test } from './fixtures.mjs';
+import { axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {import('@playwright/test').WebSocketRoute} WebSocketRoute */
@@ -127,11 +127,20 @@ const texto = (/** @type {Page} */ page) =>
     return [...copia.querySelectorAll('.cm-line')].map((l) => l.textContent).join('\n');
   });
 
+/**
+ * La segunda persona, en su propio contexto (otra cookie, otra sesión) y con el API cerrado por defecto.
+ * @param {import('@playwright/test').Browser} browser @param {string | undefined} baseURL @param {'light' | 'dark'} colorScheme
+ */
+async function segundaPersona(browser, baseURL, colorScheme) {
+  const contexto = await browser.newContext({ baseURL, locale: 'es-MX', timezoneId: 'UTC', colorScheme, serviceWorkers: 'block' });
+  const pagina = await contexto.newPage();
+  await pagina.route('**/api/**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: cuerpoError('sin_refresco', 'Inicia sesión de nuevo') }));
+  return { contexto, pagina };
+}
+
 test('dos personas editan a la vez: el mismo texto, los cursores con nombre, deshacer lo propio, Tab y sangría', async ({ page, browser, baseURL }) => {
   const servidor = relevo();
-  const contextoB = await browser.newContext({ baseURL, locale: 'es-MX', timezoneId: 'UTC', colorScheme: 'light', serviceWorkers: 'block' });
-  const pageB = await contextoB.newPage();
-  await pageB.route('**/api/**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: cuerpoError('sin_refresco', 'Inicia sesión de nuevo') }));
+  const { contexto: contextoB, pagina: pageB } = await segundaPersona(browser, baseURL, 'light');
   try {
     const a = await abrirEditor(page, ANA, servidor);
     const b = await abrirEditor(pageB, BETO, servidor);
@@ -185,3 +194,34 @@ test('dos personas editan a la vez: el mismo texto, los cursores con nombre, des
     await contextoB.close();
   }
 });
+
+// ─── Accesibilidad con cursores y selecciones ajenas a la vista ──────────────────
+
+for (const esquema of /** @type {const} */ (['light', 'dark'])) {
+  test.describe(`axe en el editor con cursores remotos, tema ${esquema === 'light' ? 'claro' : 'oscuro'}`, () => {
+    test.use({ colorScheme: esquema });
+
+    test('cursor y selección de otra persona, con su nombre', async ({ page, browser, baseURL }) => {
+      const servidor = relevo();
+      const { contexto: contextoB, pagina: pageB } = await segundaPersona(browser, baseURL, esquema);
+      try {
+        const a = await abrirEditor(page, ANA, servidor);
+        const b = await abrirEditor(pageB, BETO, servidor);
+        await a.editor.click();
+        await page.keyboard.type('Texto que Beto selecciona.');
+        await expect.poll(() => texto(pageB)).toBe('Texto que Beto selecciona.');
+        await b.editor.click();
+        await pageB.keyboard.press('Control+End');
+        await pageB.keyboard.press('Shift+Home');
+        const etiqueta = page.locator('.cm-ySelectionInfo', { hasText: BETO.nombre });
+        await expect(etiqueta).toBeVisible();
+        await expect(page.locator('.cm-ySelection').first()).toBeVisible();
+        // El color dibujado es el token (nunca un valor que mande otro cliente).
+        await expect(etiqueta.locator('xpath=..')).toHaveAttribute('style', /var\(--color-presencia-[1-6]\)/);
+        expect(await axeEstable(page)).toEqual([]);
+      } finally {
+        await contextoB.close();
+      }
+    });
+  });
+}

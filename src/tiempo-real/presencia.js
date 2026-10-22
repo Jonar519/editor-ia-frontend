@@ -9,7 +9,7 @@
 import * as Y from 'yjs';
 
 /** Cantidad de colores de la paleta de presencia (tokens --color-presencia-1 … N). */
-export const COLORES_PRESENCIA = 8;
+export const COLORES_PRESENCIA = 6;
 
 /**
  * Índice de color (1…n) de una cuenta: FNV-1a de 32 bits sobre su id. El mismo id da el mismo color en

@@ -63,6 +63,33 @@
   --paleta-rojo-800: #861a14;
   --paleta-rojo-950: #351412;
 
+  /* Presencia (bloque L): un tono por persona, sin violeta (reservado a la IA) ni rojo (peligro). Cada uno
+     en su versión para cada tema, y la selección ya mezclada con la superficie (opaca: se mide tal cual). */
+  --paleta-presencia-azul: #2472e0;
+  --paleta-presencia-azul-noche: #327be2;
+  --paleta-presencia-azul-sel: #cfe0f8;
+  --paleta-presencia-azul-sel-noche: #1f375a;
+  --paleta-presencia-turquesa: #12816b;
+  --paleta-presencia-turquesa-noche: #148f76;
+  --paleta-presencia-turquesa-sel: #cbe3de;
+  --paleta-presencia-turquesa-sel-noche: #163d39;
+  --paleta-presencia-verde: #138639;
+  --paleta-presencia-verde-noche: #148f3d;
+  --paleta-presencia-verde-sel: #cbe4d3;
+  --paleta-presencia-verde-sel-noche: #163d28;
+  --paleta-presencia-ambar: #986c16;
+  --paleta-presencia-ambar-noche: #a57618;
+  --paleta-presencia-ambar-sel: #e8dfcc;
+  --paleta-presencia-ambar-sel-noche: #42361d;
+  --paleta-presencia-naranja: #c0581b;
+  --paleta-presencia-naranja-noche: #c95c1d;
+  --paleta-presencia-naranja-sel: #f1dacd;
+  --paleta-presencia-naranja-sel-noche: #4c2e1e;
+  --paleta-presencia-rosa: #e02957;
+  --paleta-presencia-rosa-noche: #e33b65;
+  --paleta-presencia-rosa-sel: #f8d0da;
+  --paleta-presencia-rosa-sel-noche: #542434;
+
   /* ─── Significados, tema claro ────────────────────────────────────────────── */
   --color-fondo: var(--paleta-gris-50);
   --color-superficie: var(--paleta-blanco);
@@ -87,6 +114,20 @@
   --color-peligro: var(--paleta-rojo-700);
   --color-peligro-fondo: var(--paleta-rojo-50);
   --color-peligro-texto: var(--paleta-rojo-800);
+
+  --color-presencia-1: var(--paleta-presencia-azul);
+  --color-presencia-2: var(--paleta-presencia-turquesa);
+  --color-presencia-3: var(--paleta-presencia-verde);
+  --color-presencia-4: var(--paleta-presencia-ambar);
+  --color-presencia-5: var(--paleta-presencia-naranja);
+  --color-presencia-6: var(--paleta-presencia-rosa);
+  --color-presencia-1-seleccion: var(--paleta-presencia-azul-sel);
+  --color-presencia-2-seleccion: var(--paleta-presencia-turquesa-sel);
+  --color-presencia-3-seleccion: var(--paleta-presencia-verde-sel);
+  --color-presencia-4-seleccion: var(--paleta-presencia-ambar-sel);
+  --color-presencia-5-seleccion: var(--paleta-presencia-naranja-sel);
+  --color-presencia-6-seleccion: var(--paleta-presencia-rosa-sel);
+  --color-sobre-presencia: var(--paleta-blanco);
 
   /* ─── Tipografía, espacio, forma y movimiento (iguales en los dos temas) ──── */
   /* Fuentes AUTOALOJADAS (src/main.js las importa de @fontsource-variable, licencia SIL OFL 1.1): se sirven
@@ -140,5 +181,19 @@
     --color-peligro: var(--paleta-rojo-400);
     --color-peligro-fondo: var(--paleta-rojo-950);
     --color-peligro-texto: var(--paleta-rojo-300);
+
+    --color-presencia-1: var(--paleta-presencia-azul-noche);
+    --color-presencia-2: var(--paleta-presencia-turquesa-noche);
+    --color-presencia-3: var(--paleta-presencia-verde-noche);
+    --color-presencia-4: var(--paleta-presencia-ambar-noche);
+    --color-presencia-5: var(--paleta-presencia-naranja-noche);
+    --color-presencia-6: var(--paleta-presencia-rosa-noche);
+    --color-presencia-1-seleccion: var(--paleta-presencia-azul-sel-noche);
+    --color-presencia-2-seleccion: var(--paleta-presencia-turquesa-sel-noche);
+    --color-presencia-3-seleccion: var(--paleta-presencia-verde-sel-noche);
+    --color-presencia-4-seleccion: var(--paleta-presencia-ambar-sel-noche);
+    --color-presencia-5-seleccion: var(--paleta-presencia-naranja-sel-noche);
+    --color-presencia-6-seleccion: var(--paleta-presencia-rosa-sel-noche);
+    --color-sobre-presencia: var(--paleta-gris-950);
   }
 }
