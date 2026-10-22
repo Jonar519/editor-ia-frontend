@@ -303,3 +303,44 @@ test('sin red: Ana sigue escribiendo, cierra la página, vuelve con red y todo l
     await contextoB.close();
   }
 });
+
+test('salir con cambios sin enviar avisa cuántos; cancelar los conserva y confirmar los borra', async ({ page }) => {
+  const servidor = relevo();
+  const conexionAna = { sinRed: false };
+  const a = await abrirEditor(page, ANA, servidor, conexionAna);
+  await a.editor.click();
+  await page.keyboard.type('Base');
+  await expect.poll(() => servidor.doc.getText('contenido').toString()).toBe('Base');
+
+  conexionAna.sinRed = true;
+  await page.context().setOffline(true);
+  await a.sockets.at(-1)?.close({ code: 1001, reason: 'sin red' });
+  await expect(red(page)).toContainText('Sin conexión');
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type(' uno');
+  await expect(red(page)).toContainText('Hay cambios sin enviar');
+  const bases = () => page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name));
+
+  // Cancelar: no sale, la copia sigue.
+  await page.getByRole('button', { name: 'Salir' }).click();
+  const dialogo = page.getByRole('alertdialog', { name: 'Tienes 4 cambios sin enviar (en 1 documento)' });
+  await expect(dialogo).toBeVisible();
+  await expect(dialogo.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+  await dialogo.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialogo).toHaveCount(0);
+  await expect(page).toHaveURL(/editar$/);
+  expect(await bases()).toContain('cuaderno-local');
+
+  // Escape también cancela.
+  await page.getByRole('button', { name: 'Salir' }).click();
+  await expect(dialogo).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialogo).toHaveCount(0);
+  expect(await bases()).toContain('cuaderno-local');
+
+  // Confirmar: sale y borra la copia (con esos cambios).
+  await page.getByRole('button', { name: 'Salir' }).click();
+  await dialogo.getByRole('button', { name: 'Salir y borrar esos cambios' }).click();
+  await expect(page).toHaveURL(/#\/$/);
+  await expect.poll(bases).not.toContain('cuaderno-local');
+});

@@ -132,8 +132,10 @@ function red(/** @type {ReturnType<typeof azarCon>} */ azar) {
 function almacenEnMemoria() {
   /** @type {Uint8Array[]} */
   let filas = [];
+  let sinEnviar = 0;
   return {
     filas: () => filas,
+    sinEnviar: () => sinEnviar,
     abrir: async () => ({
       cargar: async () => filas.slice(),
       guardar: async (/** @type {Uint8Array} */ u) => {
@@ -144,6 +146,11 @@ function almacenEnMemoria() {
       },
       borrar: async () => {
         filas = [];
+        sinEnviar = 0;
+      },
+      sinEnviar: async () => sinEnviar,
+      marcarSinEnviar: async (/** @type {number} */ n) => {
+        sinEnviar = n;
       },
     }),
   };
@@ -282,7 +289,7 @@ async function corrida(semilla, o) {
     sobrevivientes: [...insertados].filter((f) => !borrados.has(f)),
     borrados: [...borrados],
     avisos,
-    pendientesAlFinal: replicas.filter((rep) => rep.pendiente).map((rep) => rep.i),
+    pendientesAlFinal: replicas.filter((rep) => rep.pendiente || rep.almacen.sinEnviar() > 0).map((rep) => rep.i),
     almacenes: replicas.map((rep) => {
       const d = new Y.Doc();
       for (const u of rep.almacen.filas()) Y.applyUpdate(d, u);

@@ -4,8 +4,9 @@
 import { ErrorApi, mensajeParaPersona } from '../../api/errores.js';
 import { anunciar } from '../../componentes/anunciar.js';
 import { conDatos } from '../../componentes/estado.js';
+import { salirConAviso } from '../../componentes/salir.js';
 import { aviso, h } from '../../dom.js';
-import { api, cerrarSesion } from '../../sesion.js';
+import { api } from '../../sesion.js';
 import { fechaHora, paginaCuenta } from './comun.js';
 
 /**
@@ -61,7 +62,9 @@ function lista(sesiones, recargar, mensaje) {
     boton.addEventListener('click', () => {
       boton.disabled = true;
       if (s.actual) {
-        void cerrarSesion().then(() => {
+        void salirConAviso().then((salio) => {
+          boton.disabled = false;
+          if (!salio) return;
           anunciar('Cerraste la sesión.');
           window.location.hash = '#/';
         });

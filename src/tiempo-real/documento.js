@@ -26,7 +26,7 @@ const DE_LA_COPIA = Symbol('copia-local');
  *   documentoId: string,
  *   alEstado: (e: import('./conexion.js').EstadoRed) => void,
  *   alRol?: (rol: string) => void,
- *   alPendiente?: (hay: boolean) => void,
+ *   alPendiente?: (hay: boolean, cuantos: number) => void,
  *   alCopia?: (e: EstadoCopia) => void,
  *   alRechazados?: () => void,
  *   persistir?: { usuarioId: string },
@@ -56,9 +56,11 @@ export async function abrirDocumento(o) {
     almacen = null;
     o.alCopia?.('copia-fallo');
   };
+  let sinEnviarInicial = 0;
   if (o.persistir) {
     try {
       almacen = await (deps.abrirAlmacen ?? abrirAlmacen)({ usuarioId: o.persistir.usuarioId, documentoId: o.documentoId });
+      sinEnviarInicial = await almacen.sinEnviar();
       const guardadas = await almacen.cargar();
       Y.transact(doc, () => {
         for (const u of guardadas) Y.applyUpdate(doc, u, DE_LA_COPIA);
@@ -102,7 +104,13 @@ export async function abrirDocumento(o) {
       o.alEstado(e);
     },
     alRol: o.alRol,
-    alPendiente: o.alPendiente,
+    sinEnviarInicial,
+    alPendiente: (hay, cuantos) => {
+      // Cuántos cambios sin enviar, en la copia: salir de la cuenta avisa con ese número.
+      const a = almacen;
+      if (a) cola = cola.then(() => a.marcarSinEnviar(cuantos)).catch(fallo);
+      o.alPendiente?.(hay, cuantos);
+    },
     alRechazados: () => {
       olvidarCopia();
       o.alRechazados?.();

@@ -587,6 +587,22 @@ h2[tabindex='-1']:focus,
   margin: 0;
 }
 
+/* Diálogo modal (salir con cambios sin enviar). El fondo detrás es el del navegador. */
+.dialogo {
+  max-width: 32rem;
+  padding: var(--espacio-6);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: var(--radio);
+}
+
+.dialogo h2 {
+  margin-top: 0;
+  font-size: var(--tamano-base);
+}
+
 .quien-esta {
   margin: 0 0 var(--espacio-4);
 }
