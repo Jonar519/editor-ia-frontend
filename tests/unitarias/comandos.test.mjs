@@ -53,6 +53,11 @@ describe('comandos de Markdown', () => {
     aplicar('bloque-codigo', b);
     expect(b.state.doc.toString()).toBe('```\n\n```\n');
     expect(b.state.selection.main.head).toBe(4);
+    // En una línea vacía justo después de una lista: una línea en blanco antes (si no, la tabla sería parte
+    // de la lista; lo encontró la E2E).
+    const l = vista('- uno\n', 6);
+    aplicar('tabla', l);
+    expect(l.state.doc.toString()).toBe('- uno\n\n| Columna | Columna |\n| --- | --- |\n| | |\n');
   });
 
   it('enlace: la selección queda como texto y el cursor en la dirección', () => {

@@ -49,11 +49,15 @@ export const prefijo = (/** @type {string} */ marca) => (/** @type {EditorView} 
   return true;
 };
 
-/** Inserta un bloque en una línea propia; `cursor` es dónde queda el cursor dentro del bloque. */
+/**
+ * Inserta un bloque en una línea propia, con una línea en blanco antes (si no, el Markdown lo pega al
+ * párrafo o a la lista anterior: una tabla dejaría de ser tabla). `cursor` es dónde queda el cursor dentro.
+ */
 export const bloque = (/** @type {string} */ texto, /** @type {number} */ cursor) => (/** @type {EditorView} */ v) => {
   const r = v.state.selection.main;
   const linea = v.state.doc.lineAt(r.from);
-  const antes = linea.text.trim() === '' ? '' : '\n\n';
+  const anterior = linea.number > 1 ? v.state.doc.line(linea.number - 1).text : '';
+  const antes = linea.text.trim() !== '' ? '\n\n' : anterior.trim() !== '' ? '\n' : '';
   v.dispatch({ changes: { from: r.to, insert: antes + texto }, selection: { anchor: r.to + antes.length + cursor }, userEvent: 'input' });
   return true;
 };
