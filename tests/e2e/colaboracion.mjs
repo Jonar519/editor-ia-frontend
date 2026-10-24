@@ -251,6 +251,9 @@ export function versionesSimuladas(servidor) {
   const versiones = [];
   const textoVivo = () => servidor.doc.getText('contenido').toString();
   const sinTexto = (/** @type {(typeof versiones)[number]} */ v) => ({ ...v, texto: undefined });
+  // Bloque R: la verificación la recalcula la base (prueba de integración del backend); aquí se simula
+  // su respuesta, y `alterar(n)` hace como si alguien hubiera manipulado la versión n en la base.
+  const cadena = { alteradaDesde: /** @type {number | null} */ (null) };
   /** @param {Page} page @param {Cuenta} cuenta */
   async function registrar(page, cuenta) {
     const agregar = (/** @type {string} */ motivo, /** @type {number | null} */ restauradaDe) => {
@@ -264,6 +267,9 @@ export function versionesSimuladas(servidor) {
       if (r.request().method() === 'GET') return json(r, { versiones: [...versiones].reverse().map(sinTexto) });
       return json(r, sinTexto(agregar('manual', null)), 201);
     });
+    await page.route(`**/api/documentos/${DOC}/versiones/verificacion`, (r) =>
+      json(r, { integra: cadena.alteradaDesde === null, versiones: versiones.length, alteradaDesde: cadena.alteradaDesde }),
+    );
     await page.route(new RegExp(`/api/documentos/${DOC}/versiones/(\\d+)(/restaurar)?$`), (r) => {
       const m = /versiones\/(\d+)(\/restaurar)?$/.exec(r.request().url());
       const v = versiones.find((x) => x.numero === Number(m?.[1]));
@@ -278,5 +284,11 @@ export function versionesSimuladas(servidor) {
       return json(r, sinTexto(agregar('restauracion', v.numero)), 201);
     });
   }
-  return { versiones, registrar };
+  return {
+    versiones,
+    registrar,
+    alterar: (/** @type {number} */ n) => {
+      cadena.alteradaDesde = n;
+    },
+  };
 }

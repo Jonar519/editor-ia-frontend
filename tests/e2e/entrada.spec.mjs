@@ -33,6 +33,13 @@ test.describe('hero', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: 'Cuaderno' })).toBeFocused();
     await expect(page.getByText('Documentación técnica escrita en equipo.')).toBeVisible();
+    // Solo lo que es verdad (revisión del bloque R): versiones verificables desde el historial y un
+    // asistente que explica, resume, mejora y busca (no responde con citas de otros documentos).
+    await expect(page.locator('.hero-ideas li')).toHaveText([
+      'Escriban juntos, en tiempo real.',
+      'Cada versión queda guardada y se puede verificar.',
+      'Un asistente que explica, resume y mejora tu documentación, y busca por significado en tu espacio.',
+    ]);
     await expect(page.locator('main .boton-primario')).toHaveCount(1);
     await expect(page.getByRole('figure', { name: 'Ilustración de ejemplo: no es un documento real.' })).toBeVisible();
     // Sin cifras: ningún dígito en el contenido del hero.

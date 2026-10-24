@@ -890,6 +890,24 @@
       "reemplazo": "import { leerSse } from './ia-sse.js';\nimport './ia-autocompletado.js';",
       "comando": "test",
       "pruebas": ["tests/unitarias/ia-diferidas.test.mjs"]
+    },
+    {
+      "id": "R01",
+      "regla": "Verificar la cadena: «alterada» se muestra como error, nunca como éxito",
+      "archivo": "src/vistas/lector/versiones.js",
+      "buscar": "if (!r.integra) return { tipo: 'error',",
+      "reemplazo": "if (!r.integra) return { tipo: 'exito',",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/verificacion.test.mjs"]
+    },
+    {
+      "id": "R02",
+      "regla": "Verificar la cadena: dice desde qué versión está alterada",
+      "archivo": "src/vistas/lector/versiones.js",
+      "buscar": "alterada desde la versión ${String(r.alteradaDesde)}.",
+      "reemplazo": "alterada desde la versión ${String(r.versiones)}.",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/verificacion.test.mjs"]
     }
   ]
 }

@@ -1,7 +1,7 @@
 // Bloque N de punta a punta, con el API y el WebSocket simulados (colaboracion.mjs): comentarios anclados
 // entre una lectora (vista de lectura) y una editora (editor), y el historial de versiones con diferencia y
 // restauración. Datos SOLO ficticios.
-import { ANA, LUCIA, abrirDocumento, comentariosSimulados, relevo, segundaPersona, texto, versionesSimuladas } from './colaboracion.mjs';
+import { ANA, DOC, LUCIA, abrirDocumento, comentariosSimulados, relevo, segundaPersona, texto, versionesSimuladas } from './colaboracion.mjs';
 import { axeEstable, expect, test } from './fixtures.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
@@ -135,6 +135,18 @@ test('versiones: guardar, comparar en el Web Worker y restaurar como cambio nuev
     await expect(pagina.locator('ol.filas .fila-titulo').first()).toHaveText(/^Versión 2 · Restauración de la 1/);
     await expect(pagina.getByRole('button', { name: 'Restaurar' })).toHaveCount(0);
     await expect(pagina.getByRole('button', { name: 'Guardar una versión ahora' })).toHaveCount(0);
+
+    // Bloque R: quien lee también verifica la cadena; si alguien la manipuló en la base, lo ve como error.
+    const verificada = pagina.waitForResponse(`**/api/documentos/${DOC}/versiones/verificacion`);
+    await pagina.getByRole('button', { name: 'Verificar la cadena' }).click();
+    await verificada;
+    await expect(pagina.locator('.verificacion .aviso-exito')).toHaveText('Listo: La cadena está íntegra: 2 versiones verificadas.');
+    versiones.alterar(1);
+    const otra = pagina.waitForResponse(`**/api/documentos/${DOC}/versiones/verificacion`);
+    await pagina.getByRole('button', { name: 'Verificar la cadena' }).click();
+    await otra;
+    await expect(pagina.locator('.verificacion').getByRole('alert')).toHaveText('Error: La cadena está alterada desde la versión 1.');
+    expect(await axeEstable(pagina)).toEqual([]);
   } finally {
     await contexto.close();
   }
