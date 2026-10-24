@@ -908,6 +908,42 @@
       "reemplazo": "alterada desde la versión ${String(r.versiones)}.",
       "comando": "test",
       "pruebas": ["tests/unitarias/verificacion.test.mjs"]
+    },
+    {
+      "id": "R03",
+      "regla": "CSP: script-src sin 'unsafe-inline'",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "'script-src': [\"'self'\"],",
+      "reemplazo": "'script-src': [\"'self'\", \"'unsafe-inline'\"],",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "R04",
+      "regla": "CSP: script-src sin 'unsafe-eval'",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "'script-src': [\"'self'\"],",
+      "reemplazo": "'script-src': [\"'self'\", \"'unsafe-eval'\"],",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "R05",
+      "regla": "CSP: 'unsafe-inline' solo en style-src-elem y style-src-attr (no en style-src)",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "'style-src': [\"'self'\"],",
+      "reemplazo": "'style-src': [\"'self'\", \"'unsafe-inline'\"],",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "R06",
+      "regla": "CSP: worker-src 'self' (comparación de versiones y Service Worker)",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "'worker-src': [\"'self'\"],",
+      "reemplazo": "'worker-src': [\"'none'\"],",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
     }
   ]
 }

@@ -7,7 +7,7 @@ import * as encoding from 'lib0/encoding';
 import { applyAwarenessUpdate, Awareness, encodeAwarenessUpdate } from 'y-protocols/awareness';
 import { readSyncMessage, writeSyncStep1 } from 'y-protocols/sync';
 import * as Y from 'yjs';
-import { cuerpoError, expect } from './fixtures.mjs';
+import { cuerpoError, expect, vigilarCsp } from './fixtures.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {import('@playwright/test').Route} Route */
@@ -177,6 +177,13 @@ export async function segundaPersona(browser, baseURL, colorScheme) {
   const contexto = await browser.newContext({ baseURL, locale: 'es-MX', timezoneId: 'UTC', colorScheme, serviceWorkers: 'block' });
   const pagina = await contexto.newPage();
   await pagina.route('**/api/**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: cuerpoError('sin_refresco', 'Inicia sesión de nuevo') }));
+  // Como la fixture (bloque R): al cerrar su contexto, la prueba falla si su página violó la CSP.
+  const violaciones = await vigilarCsp(pagina);
+  const cerrar = contexto.close.bind(contexto);
+  contexto.close = async (/** @type {any} */ ...a) => {
+    await cerrar(...a);
+    expect(violaciones, 'violaciones de la CSP (segunda persona)').toEqual([]);
+  };
   return { contexto, pagina };
 }
 
