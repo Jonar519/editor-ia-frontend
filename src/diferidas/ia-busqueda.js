@@ -27,7 +27,7 @@ export async function buscarEnEspacio(o) {
       return;
     }
     o.salida.replaceChildren(
-      h('p', { role: 'status' }, `${String(r.resultados.length)} ${r.resultados.length === 1 ? 'resultado' : 'resultados'} parecidos.`),
+      h('p', { role: 'status' }, `${String(r.resultados.length)} ${r.resultados.length === 1 ? 'resultado parecido' : 'resultados parecidos'}.`),
       h(
         'ol',
         { class: 'resultados-ia' },
