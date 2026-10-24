@@ -75,6 +75,18 @@ export function vistaDiferencia(ops) {
   return h('div', {}, resumen, lista);
 }
 
+/**
+ * El resultado de verificar la cadena de hash (bloque R): íntegra, o alterada desde la versión N. La
+ * recalcula la base; aquí solo se dice. Íntegra es un éxito; alterada, un error (nunca un color nuevo).
+ * @param {{ integra: boolean, versiones: number, alteradaDesde: number | null }} r
+ * @returns {{ tipo: 'exito' | 'error', texto: string }}
+ */
+export function textoVerificacion(r) {
+  if (!r.integra) return { tipo: 'error', texto: `La cadena está alterada desde la versión ${String(r.alteradaDesde)}.` };
+  if (r.versiones === 0) return { tipo: 'exito', texto: 'La cadena está íntegra: todavía no hay versiones.' };
+  return { tipo: 'exito', texto: `La cadena está íntegra: ${String(r.versiones)} ${r.versiones === 1 ? 'versión verificada' : 'versiones verificadas'}.` };
+}
+
 /** @param {Record<string, string>} params */
 export async function render(params) {
   const id = params.id ?? '';
@@ -175,6 +187,26 @@ export async function render(params) {
   }
 
   pagina.append(h('p', { class: 'enlaces-documento' }, h('a', { href: `#${base}` }, 'Volver al documento')), resultado);
+
+  // Bloque R: cualquier rol verifica la cadena de hash de TODAS las versiones (la recalcula la base).
+  const verificar = h('button', { type: 'button', class: 'boton' }, 'Verificar la cadena');
+  const verificacion = h('div', { class: 'verificacion' });
+  verificar.addEventListener('click', () => {
+    verificar.disabled = true;
+    verificacion.replaceChildren(h('p', { class: 'cargando', role: 'status' }, 'Verificando…'));
+    api.solicitar(`${base}/versiones/verificacion`).then(
+      (/** @type {{ integra: boolean, versiones: number, alteradaDesde: number | null }} */ r) => {
+        const { tipo, texto } = textoVerificacion(r);
+        verificacion.replaceChildren(aviso(tipo, texto));
+        anunciar(texto);
+      },
+      (err) => verificacion.replaceChildren(aviso('error', `No se pudo verificar. ${mensajeParaPersona(err)}`)),
+    ).finally(() => {
+      verificar.disabled = false;
+    });
+  });
+  pagina.append(h('p', {}, verificar), verificacion);
+
   if (escribe) {
     const guardar = h('button', { type: 'button', class: 'boton boton-primario' }, 'Guardar una versión ahora');
     guardar.addEventListener('click', () => {
