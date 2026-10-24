@@ -30,9 +30,17 @@ export class Elemento extends Nodo {
     /** @type {Map<string, ((ev: any) => void)[]>} */
     this.oyentes = new Map();
     this.disabled = false;
-    this.checked = false;
+    /** @type {boolean | undefined} */
+    this._marcado = undefined;
     /** @type {string | undefined} */
     this._valor = undefined;
+  }
+  /** Como en el navegador: sin tocarlo, refleja el atributo checked. */
+  get checked() {
+    return this._marcado ?? this.atributos.has('checked');
+  }
+  set checked(si) {
+    this._marcado = si;
   }
   setAttribute(/** @type {string} */ n, /** @type {string} */ v) {
     this.atributos.set(n, String(v));

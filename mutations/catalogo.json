@@ -737,6 +737,159 @@
       "reemplazo": "  return 0;",
       "comando": "test",
       "pruebas": ["tests/unitarias/posiciones.test.mjs"]
+    },
+    {
+      "id": "Q01",
+      "regla": "IA: Mejorar NUNCA se aplica solo (propuesta con Reemplazar / Insertar debajo / Descartar)",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "if (tarea === 'mejorar' && s && total.trim()) ofrecer(s, total.trim());",
+      "reemplazo": "if (tarea === 'mejorar' && s && total.trim()) o.aplicar?.reemplazar(s, total.trim());",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q02",
+      "regla": "IA: la salida se muestra solo con el saneador del Markdown, nunca con innerHTML",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "    respuesta.replaceChildren(renderizar(md));",
+      "reemplazo": "    respuesta.innerHTML = md;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q03",
+      "regla": "IA: Detener aborta el pedido en curso",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "  bDetener.addEventListener('click', () => enCurso?.abort());",
+      "reemplazo": "  bDetener.addEventListener('click', () => {});",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q04",
+      "regla": "IA: quien lee no ve Mejorar, ni las sugerencias, ni el índice",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "    const puede = escribe(o.rol());",
+      "reemplazo": "    const puede = true;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q05",
+      "regla": "IA: sin quien aplique la propuesta (la lectura), no hay Mejorar",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "    mejorar.hidden = !puede || !o.aplicar;",
+      "reemplazo": "    mejorar.hidden = !puede;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q06",
+      "regla": "IA: una corriente que se corta sin «fin» es un error, no una respuesta completa",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "    } else if (fallo || !fin) {",
+      "reemplazo": "    } else if (fallo) {",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q07",
+      "regla": "IA: el event: error del streaming se muestra con su código",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "          fallo = e.datos;",
+      "reemplazo": "          fallo = null;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q08",
+      "regla": "IA: las sugerencias empiezan desactivadas (interruptor solo en memoria)",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "h('input', { type: 'checkbox', id: 'ia-sugerencias' })",
+      "reemplazo": "h('input', { type: 'checkbox', id: 'ia-sugerencias', checked: true })",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q09",
+      "regla": "IA: el tope diario (o sin permiso, o sin IA) apaga las sugerencias",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "    if (codigo === 'tope_diario_ia' || codigo === 'sin_permiso' || codigo === 'ia_no_disponible') {",
+      "reemplazo": "    if (false) {",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-panel.test.mjs"]
+    },
+    {
+      "id": "Q10",
+      "regla": "IA autocompletado: una sugerencia de un pedido anterior se ignora",
+      "archivo": "src/diferidas/ia-autocompletado.js",
+      "buscar": "  return c.pedido === esperado.pedido && typeof c.texto",
+      "reemplazo": "  return typeof c.texto",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-autocompletado.test.mjs"]
+    },
+    {
+      "id": "Q11",
+      "regla": "IA autocompletado: si el documento cambió desde el pedido, la sugerencia se ignora",
+      "archivo": "src/diferidas/ia-autocompletado.js",
+      "buscar": "estado.doc === esperado.doc && ",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-autocompletado.test.mjs"]
+    },
+    {
+      "id": "Q12",
+      "regla": "IA autocompletado: si el cursor se movió, la sugerencia se ignora",
+      "archivo": "src/diferidas/ia-autocompletado.js",
+      "buscar": "s.empty && s.head === esperado.pos;",
+      "reemplazo": "s.empty;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-autocompletado.test.mjs"]
+    },
+    {
+      "id": "Q13",
+      "regla": "IA autocompletado: el anuncio no se repite mientras se sigue escribiendo",
+      "archivo": "src/diferidas/ia-autocompletado.js",
+      "buscar": "      if (anunciado) return false;",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-autocompletado.test.mjs"]
+    },
+    {
+      "id": "Q14",
+      "regla": "IA autocompletado: sin sugerencia, Tab no se captura (sale del editor, WCAG 2.1.2)",
+      "archivo": "src/diferidas/ia-autocompletado.js",
+      "buscar": "  if (!f) return false;",
+      "reemplazo": "  if (!f) return true;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-autocompletado.test.mjs"]
+    },
+    {
+      "id": "Q15",
+      "regla": "IA bajo demanda: la lectura no importa el panel estáticamente",
+      "archivo": "src/vistas/lector/documento.js",
+      "buscar": "import { puedeEditar } from './documentos.js';",
+      "reemplazo": "import { puedeEditar } from './documentos.js';\nimport '../../diferidas/ia.js';",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-diferidas.test.mjs"]
+    },
+    {
+      "id": "Q16",
+      "regla": "IA bajo demanda: el autocompletado no entra en el chunk del editor",
+      "archivo": "src/vistas/editor/editar.js",
+      "buscar": "import { anunciar } from '../../componentes/anunciar.js';",
+      "reemplazo": "import { anunciar } from '../../componentes/anunciar.js';\nimport { crearAutocompletado } from '../../diferidas/ia-autocompletado.js';",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-diferidas.test.mjs"]
+    },
+    {
+      "id": "Q17",
+      "regla": "IA: el panel no trae CodeMirror (quien lee no lo descarga al abrir la IA, ADR 0004)",
+      "archivo": "src/diferidas/ia.js",
+      "buscar": "import { leerSse } from './ia-sse.js';",
+      "reemplazo": "import { leerSse } from './ia-sse.js';\nimport './ia-autocompletado.js';",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/ia-diferidas.test.mjs"]
     }
   ]
 }
