@@ -6,6 +6,7 @@ import { anunciar } from '../../componentes/anunciar.js';
 import { conDatos } from '../../componentes/estado.js';
 import { campo, controlEnvio, erroresEnCampos } from '../../componentes/formulario.js';
 import { api } from '../../sesion.js';
+import { cargarIa } from '../../ia-carga.js';
 
 /**
  * @typedef {{ id: string, nombre: string, rol: 'propietario' | 'editor' | 'lector', miembros: number }} Espacio
@@ -62,12 +63,38 @@ function filaDocumento(d) {
   );
 }
 
+/**
+ * Búsqueda por significado (bloque Q): el formulario es de aquí; buscar carga la IA bajo demanda.
+ * @param {Espacio} e
+ */
+function buscadorIa(e) {
+  const id = `buscar-${e.id}`;
+  const consulta = h('input', { id, type: 'search', name: 'consulta', maxlength: '500', autocomplete: 'off' });
+  const salida = h('div', { class: 'resultados-busqueda' });
+  const form = h(
+    'form',
+    { class: 'buscar-ia', role: 'search', 'aria-label': `Buscar por significado en ${e.nombre}` },
+    h('label', { for: id }, h('span', { class: 'etiqueta-ia' }, 'IA'), ' Buscar por significado'),
+    ' ',
+    consulta,
+    ' ',
+    h('button', { type: 'submit', class: 'boton boton-chico boton-ia' }, 'Buscar'),
+    salida,
+  );
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    void cargarIa().then((m) => m.buscarEnEspacio({ espacioId: e.id, consulta: consulta.value, salida }));
+  });
+  return form;
+}
+
 /** @param {Espacio} e @param {boolean} cuentaLectora */
 function seccionEspacio(e, cuentaLectora) {
   const lista = h('ul', { class: 'filas' });
   const vacio = h('p', { class: 'vacio' }, 'Este espacio todavía no tiene documentos.');
   const titulo = `espacio-${e.id}`;
   const seccion = h('section', { class: 'espacio', 'aria-labelledby': titulo }, h('h2', { id: titulo }, e.nombre), h('p', { class: 'suave' }, `Tu rol: ${ROL_CONTENIDO[e.rol]}`));
+  seccion.append(buscadorIa(e));
   seccion.append(
     conDatos({
       queCarga: `los documentos de ${e.nombre}`,
