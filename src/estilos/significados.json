@@ -40,9 +40,13 @@
     "--color-codigo-cadena": { "significado": "Código resaltado: cadenas y expresiones regulares.", "usos": ["color"] },
     "--color-codigo-numero": { "significado": "Código resaltado: números y literales (true, null...).", "usos": ["color"] },
     "--color-codigo-titulo": { "significado": "Código resaltado: nombres de funciones, clases y secciones, y funciones propias del lenguaje.", "usos": ["color"] },
-    "--color-codigo-tipo": { "significado": "Código resaltado: tipos, atributos y variables.", "usos": ["color"] }
+    "--color-codigo-tipo": { "significado": "Código resaltado: tipos, atributos y variables.", "usos": ["color"] },
+    "--color-ia": { "significado": "Algo hecho o propuesto por la IA: borde e ícono del panel de IA, borde del botón «IA» y marca del texto sugerido. SOLO para la IA (un error de la IA usa --color-peligro; el foco sigue siendo --color-foco).", "usos": ["border-color", "border", "border-left", "color"] },
+    "--color-ia-fondo": { "significado": "Fondo del panel donde aparece una respuesta de la IA.", "usos": ["background-color"] },
+    "--color-ia-texto": { "significado": "Texto de la etiqueta «IA» y del estado de la IA (generando, detenida).", "usos": ["color"] },
+    "--color-ia-sugerencia": { "significado": "Texto fantasma del autocompletado: una sugerencia de la IA que todavía NO está en el documento. Siempre en cursiva (no depende solo del color).", "usos": ["color"] }
   },
-  "estados": ["--color-acento", "--color-info", "--color-exito", "--color-aviso", "--color-peligro"],
+  "estados": ["--color-acento", "--color-info", "--color-exito", "--color-aviso", "--color-peligro", "--color-ia"],
   "pares": [
     { "texto": "--color-texto", "fondo": "--color-fondo", "minimo": 4.5 },
     { "texto": "--color-texto", "fondo": "--color-superficie", "minimo": 4.5 },
@@ -98,6 +102,15 @@
     { "texto": "--color-codigo-titulo", "fondo": "--color-fondo", "minimo": 4.5, "nota": "fondo del bloque de código" },
     { "texto": "--color-codigo-titulo", "fondo": "--color-superficie", "minimo": 4.5 },
     { "texto": "--color-codigo-tipo", "fondo": "--color-fondo", "minimo": 4.5, "nota": "fondo del bloque de código" },
-    { "texto": "--color-codigo-tipo", "fondo": "--color-superficie", "minimo": 4.5 }
+    { "texto": "--color-codigo-tipo", "fondo": "--color-superficie", "minimo": 4.5 },
+    { "texto": "--color-ia", "fondo": "--color-fondo", "minimo": 3, "nota": "borde, ícono y marca de IA" },
+    { "texto": "--color-ia", "fondo": "--color-superficie", "minimo": 3, "nota": "borde, ícono y marca de IA sobre tarjetas y el editor" },
+    { "texto": "--color-ia", "fondo": "--color-ia-fondo", "minimo": 3, "nota": "borde del panel de IA sobre su propio fondo" },
+    { "texto": "--color-ia-texto", "fondo": "--color-ia-fondo", "minimo": 4.5, "nota": "etiqueta «IA» y estado dentro del panel" },
+    { "texto": "--color-ia-texto", "fondo": "--color-fondo", "minimo": 4.5, "nota": "etiqueta «IA» fuera del panel" },
+    { "texto": "--color-ia-texto", "fondo": "--color-superficie", "minimo": 4.5, "nota": "etiqueta «IA» sobre una tarjeta" },
+    { "texto": "--color-texto", "fondo": "--color-ia-fondo", "minimo": 4.5, "nota": "texto de la respuesta dentro del panel" },
+    { "texto": "--color-foco", "fondo": "--color-ia-fondo", "minimo": 3, "nota": "foco del teclado dentro del panel" },
+    { "texto": "--color-ia-sugerencia", "fondo": "--color-superficie", "minimo": 4.5, "nota": "texto fantasma del autocompletado sobre el editor" }
   ]
 }

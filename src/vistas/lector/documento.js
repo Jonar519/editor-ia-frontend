@@ -117,6 +117,42 @@ export async function render(params) {
       p.destruir();
     });
   }
+  // Bloque Q: la IA (explicar y resumir; quien lee no mejora ni autocompleta), BAJO DEMANDA. El panel
+  // (src/diferidas/ia.js) no trae CodeMirror: leer sigue sin descargarlo (ADR 0004; prueba E2E).
+  const lugarIa = h('div', { class: 'lugar-ia' });
+  const botonIa = h('button', { type: 'button', class: 'boton boton-chico boton-ia', 'aria-expanded': 'false', 'aria-controls': 'panel-ia' }, 'IA');
+  /** @type {ReturnType<import('../../diferidas/ia.js')['panelIa']> | null} */
+  let panelIa = null;
+  botonIa.addEventListener('click', () => {
+    if (panelIa?.abierto()) {
+      panelIa.cerrar();
+      return;
+    }
+    void import('../../diferidas/ia.js').then((m) => {
+      panelIa ??= m.panelIa({
+        documentoId: d.id,
+        rol: () => d.rol,
+        texto: () => vivo.texto.toString(),
+        seleccion: () => {
+          const s = !fuente.hidden
+            ? texto.selectionStart < texto.selectionEnd
+              ? { inicio: texto.selectionStart, fin: texto.selectionEnd }
+              : null
+            : seleccionAFuente(renderizada.el);
+          return s ? { desde: s.inicio, hasta: s.fin, texto: vivo.texto.toString().slice(s.inicio, s.fin) } : null;
+        },
+        alCerrar: () => {
+          botonIa.setAttribute('aria-expanded', 'false');
+          botonIa.focus();
+        },
+      });
+      if (!panelIa.el.isConnected) lugarIa.replaceChildren(panelIa.el);
+      botonIa.setAttribute('aria-expanded', 'true');
+      panelIa.abrir();
+    }, (err) => lugarIa.replaceChildren(aviso('error', mensajeParaPersona(err))));
+  });
+  vivo.doc.on('destroy', () => panelIa?.destruir());
+
   pagina.append(
     h(
       'div',
@@ -129,8 +165,11 @@ export async function render(params) {
           { class: 'acciones' },
           alternar,
           ' ',
+          botonIa,
+          ' ',
           h('span', { id: 'ayuda-lectura', class: 'ayuda' }, 'Para comentar, selecciona un tramo con el ratón o el dedo. Con el teclado, usa «Ver el texto fuente».'),
         ),
+        lugarIa,
         renderizada.el,
         fuente,
       ),

@@ -121,6 +121,26 @@ describe('cuerpo binario y respuesta como archivo (avatar y exportación)', () =
   });
 });
 
+describe('respuesta en corriente (SSE de la IA, bloque Q)', () => {
+  it('corriente: devuelve la Response SIN leer, con el token', async () => {
+    const { f, llamadas } = falso(() => new Response('event: fin\ndata: {}\n\n', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+    const api = crearClienteApi({ fetch: f, ahora: () => AHORA, cerrojos: null });
+    api.establecerSesion(sesion('tok-1'));
+    const r = await api.solicitar('/ia/resumir', { metodo: 'POST', cuerpo: { contenido: 'x' }, corriente: true, tiempoMaximoMs: 75_000 });
+    expect(r).toBeInstanceOf(Response);
+    expect(r.bodyUsed).toBe(false);
+    expect(await r.text()).toBe('event: fin\ndata: {}\n\n');
+    expect(llamadas[0]?.cabeceras.authorization).toBe('Bearer tok-1');
+  });
+
+  it('corriente con error antes del primer byte: ErrorApi como siempre (no una Response)', async () => {
+    const { f } = falso(() => error(503, 'ia_no_disponible'));
+    const api = crearClienteApi({ fetch: f, ahora: () => AHORA, cerrojos: null });
+    api.establecerSesion(sesion('tok-1'));
+    await expect(api.solicitar('/ia/resumir', { metodo: 'POST', corriente: true })).rejects.toMatchObject({ estado: 503, codigo: 'ia_no_disponible' });
+  });
+});
+
 describe('refresco', () => {
   it('401 no_autenticado: refresca y reintenta UNA vez con el token nuevo', async () => {
     const { f, llamadas } = falso((url, init) => {

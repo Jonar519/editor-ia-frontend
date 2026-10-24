@@ -22,8 +22,9 @@ import { panelComentarios } from '../../comentarios/panel.js';
 import { dibujarMarcas, marcasComentarios } from './marcas-comentarios.js';
 import { vistaRenderizada } from '../../markdown/vista-renderizada.js';
 import { COMANDOS } from './comandos.js';
-import { menuBarra } from './menu-barra.js';
+import { menuBarraCon } from './menu-barra.js';
 import { abrirPaleta } from './paleta.js';
+import { anunciar } from '../../componentes/anunciar.js';
 
 const esMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const MOD = esMac ? '⌘' : 'Ctrl';
@@ -48,14 +49,19 @@ export async function render(params) {
   const red = indicadorRed();
   const soloLectura = h('div', { hidden: true }, aviso('advertencia', 'Solo puedes leer este documento: tu permiso no permite editarlo.'));
   const editable = new Compartment();
+  // Bloque Q: el autocompletado de la IA entra aquí (vacío hasta que se activa en el panel).
+  const sugerenciasIa = new Compartment();
   /** @type {EditorView | null} */
   let vista = null;
+  /** @type {ReturnType<import('../../diferidas/ia.js')['panelIa']> | null} */
+  let panelIa = null;
   let rolActual = d.rol;
   const ponerRol = (/** @type {string} */ rol) => {
     rolActual = /** @type {typeof d.rol} */ (rol);
     const puede = escribe(rol);
     soloLectura.hidden = puede;
     vista?.dispatch({ effects: editable.reconfigure([EditorState.readOnly.of(!puede), EditorView.editable.of(puede)]) });
+    panelIa?.porRol();
   };
 
   // Bloque M: si el permiso bajó a lectura mientras había cambios sin conexión, no se guardaron. Se dice.
@@ -121,6 +127,93 @@ export async function render(params) {
   };
   botonPrevia.addEventListener('click', () => mostrarPrevia(botonPrevia.getAttribute('aria-pressed') !== 'true'));
 
+  // Bloque Q: la IA, BAJO DEMANDA: el panel (src/diferidas/ia.js) se descarga al primer uso, y el
+  // autocompletado (src/diferidas/ia-autocompletado.js) solo al activar el interruptor. Ninguno entra en
+  // el chunk del editor.
+  const lugarIa = h('div', { class: 'lugar-ia' });
+  const botonIa = h('button', { type: 'button', class: 'boton boton-chico boton-ia', 'aria-expanded': 'false', 'aria-controls': 'panel-ia' }, 'IA');
+  /** @type {{ extension: import('@codemirror/state').Extension, destruir: () => void } | null} */
+  let autoIa = null;
+  let quiereAuto = false;
+  /** @param {(p: NonNullable<typeof panelIa>) => unknown} f */
+  const conIa = async (f) => {
+    const v = vista;
+    if (!v) return;
+    if (!panelIa) {
+      let m;
+      try {
+        m = await import('../../diferidas/ia.js');
+      } catch (err) {
+        lugarIa.replaceChildren(aviso('error', mensajeParaPersona(err)));
+        return;
+      }
+      panelIa ??= m.panelIa({
+        documentoId: d.id,
+        rol: () => rolActual,
+        texto: () => v.state.doc.toString(),
+        seleccion: () => {
+          const s = v.state.selection.main;
+          return s.empty ? null : { desde: s.from, hasta: s.to, texto: v.state.sliceDoc(s.from, s.to) };
+        },
+        aplicar: {
+          // Como una transacción normal del editor: viaja por el CRDT con la autoría de quien acepta.
+          reemplazar: (s, nuevo) => {
+            if (!escribe(rolActual) || v.state.sliceDoc(s.desde, s.hasta) !== s.texto) return false;
+            v.dispatch({ changes: { from: s.desde, to: s.hasta, insert: nuevo }, selection: { anchor: s.desde, head: s.desde + nuevo.length }, userEvent: 'input.ia' });
+            v.focus();
+            return true;
+          },
+          insertarDebajo: (s, nuevo) => {
+            if (!escribe(rolActual)) return;
+            const fin = v.state.doc.lineAt(Math.min(s.hasta, v.state.doc.length)).to;
+            v.dispatch({ changes: { from: fin, insert: `\n\n${nuevo}` }, selection: { anchor: fin + 2, head: fin + 2 + nuevo.length }, userEvent: 'input.ia' });
+            v.focus();
+          },
+        },
+        sugerencias: {
+          poner: async (si, alError) => {
+            quiereAuto = si;
+            if (si && !autoIa) {
+              const a = await import('../../diferidas/ia-autocompletado.js');
+              // Mientras se descargaba, se pudo apagar (o activar dos veces).
+              if (!quiereAuto || autoIa) return;
+              autoIa = a.crearAutocompletado({ control: vivo.control, anunciar, alError });
+              v.dispatch({ effects: sugerenciasIa.reconfigure(autoIa.extension) });
+            } else if (!si && autoIa) {
+              autoIa.destruir();
+              autoIa = null;
+              v.dispatch({ effects: sugerenciasIa.reconfigure([]) });
+            }
+          },
+        },
+        alCerrar: () => {
+          botonIa.setAttribute('aria-expanded', 'false');
+          v.focus();
+        },
+      });
+      lugarIa.replaceChildren(panelIa.el);
+    }
+    botonIa.setAttribute('aria-expanded', 'true');
+    await f(panelIa);
+  };
+  botonIa.addEventListener('click', () => {
+    if (panelIa?.abierto()) panelIa.cerrar();
+    else void conIa((p) => p.abrir());
+  });
+  const accionesIa = () => [
+    { id: 'ia-abrir', nombre: 'Abrir el asistente de IA', palabras: 'ia asistente inteligencia artificial', aplicar: () => void conIa((p) => p.abrir()) },
+    { id: 'ia-explicar', nombre: 'Explicar la selección con la IA', palabras: 'ia explicar explicacion', aplicar: () => void conIa((p) => p.explicar()) },
+    { id: 'ia-resumir', nombre: 'Resumir el documento con la IA', palabras: 'ia resumir resumen', aplicar: () => void conIa((p) => p.resumir()) },
+    ...(escribe(rolActual)
+      ? /** @type {const} */ (['claro', 'breve', 'formal']).map((e) => ({
+          id: `ia-mejorar-${e}`,
+          nombre: `Mejorar la selección con la IA (${e})`,
+          palabras: `ia mejorar reescribir ${e}`,
+          aplicar: () => void conIa((p) => p.mejorar(e)),
+        }))
+      : []),
+  ];
+
   // La paleta (Ctrl+K): los comandos de Markdown y algunas acciones de la página.
   const abrirLaPaleta = () => {
     const v = vista;
@@ -128,6 +221,7 @@ export async function render(params) {
     abrirPaleta({
       acciones: [
         ...COMANDOS.filter(() => escribe(rolActual)).map((c) => ({ ...c, aplicar: () => void c.aplicar(v) })),
+        ...accionesIa(),
         { id: 'previa', nombre: 'Vista previa (mostrar u ocultar)', palabras: 'vista previa renderizada', aplicar: () => mostrarPrevia(botonPrevia.getAttribute('aria-pressed') !== 'true') },
         { id: 'historial', nombre: 'Historial de versiones', palabras: 'historial versiones restaurar', aplicar: () => { location.hash = `#/documentos/${encodeURIComponent(d.id)}/versiones`; } },
         { id: 'comentar', nombre: 'Comentar la selección', palabras: 'comentario comentar', aplicar: () => setTimeout(() => document.getElementById('comentar-cuerpo')?.focus(), 0) },
@@ -160,7 +254,9 @@ export async function render(params) {
           { key: 'Backspace', run: deleteMarkupBackward },
           ...defaultKeymap,
         ]),
-        menuBarra,
+        // Al principio de una línea no hay selección: del "/" solo abrir el asistente y resumir.
+        menuBarraCon(() => accionesIa().filter((a) => a.id === 'ia-abrir' || a.id === 'ia-resumir')),
+        sugerenciasIa.of([]),
         new LanguageSupport(markdownLanguage),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': `Contenido de ${d.titulo}`, 'aria-describedby': 'ayuda-editor', 'aria-multiline': 'true' }),
@@ -199,6 +295,7 @@ export async function render(params) {
     document.removeEventListener('keydown', alTecla);
     renderizada?.destruir();
     panel?.destruir();
+    panelIa?.destruir();
     vista?.destroy();
   });
 
@@ -206,7 +303,7 @@ export async function render(params) {
   if (yo) pagina.append(quienEsta(vivo.presencia, yo));
   pagina.append(
     h('p', { class: 'enlaces-documento' }, h('a', { href: `#/documentos/${encodeURIComponent(d.id)}` }, 'Ver sin editar'), ' · ', h('a', { href: `#/documentos/${encodeURIComponent(d.id)}/versiones` }, 'Historial de versiones')),
-    h('div', { class: 'zona-documento' }, h('div', {}, ayuda, h('p', { class: 'acciones' }, botonPrevia), lugar, previa), panel?.el ?? null),
+    h('div', { class: 'zona-documento' }, h('div', {}, ayuda, h('p', { class: 'acciones' }, botonPrevia, ' ', botonIa), lugarIa, lugar, previa), panel?.el ?? null),
   );
   return pagina;
 }

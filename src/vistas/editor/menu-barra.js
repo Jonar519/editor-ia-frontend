@@ -6,17 +6,31 @@
 import { autocompletion } from '@codemirror/autocomplete';
 import { COMANDOS, atajoLegible, filtrar } from './comandos.js';
 
-/** @param {import('@codemirror/autocomplete').CompletionContext} ctx */
-export function fuenteBarra(ctx) {
+/** Entradas de IA del menú (bloque Q): las pone el editor; aplicarlas carga la IA bajo demanda. */
+/** @typedef {{ id: string, nombre: string, palabras: string, aplicar: () => void }} ExtraBarra */
+
+/**
+ * @param {import('@codemirror/autocomplete').CompletionContext} ctx
+ * @param {() => ExtraBarra[]} [extras]
+ */
+export function fuenteBarra(ctx, extras = () => []) {
   const m = ctx.matchBefore(/(?:^|\s)\/[\p{L}\d-]*$/u);
   if (!m) return null;
   const desde = m.from + m.text.indexOf('/');
   const consulta = ctx.state.sliceDoc(desde + 1, ctx.pos);
+  const deIa = filtrar(extras(), consulta).map((c) => ({
+    label: c.nombre,
+    section: 'IA',
+    apply: (/** @type {import('@codemirror/view').EditorView} */ v, /** @type {unknown} */ _c, /** @type {number} */ from, /** @type {number} */ to) => {
+      v.dispatch({ changes: { from, to }, selection: { anchor: from } });
+      c.aplicar();
+    },
+  }));
   return {
     from: desde,
     // El filtro es propio (nombre y palabras clave), no el de CodeMirror.
     filter: false,
-    options: filtrar(COMANDOS, consulta).map((c) => ({
+    options: [...filtrar(COMANDOS, consulta).map((c) => ({
       label: c.nombre,
       detail: c.atajo ? atajoLegible(c.atajo) : undefined,
       section: c.bloque ? 'Bloques' : 'Texto',
@@ -29,9 +43,13 @@ export function fuenteBarra(ctx) {
         v.dispatch({ changes: { from, to }, selection: { anchor: from } });
         c.aplicar(v);
       },
-    })),
+    })), ...deIa],
   };
 }
 
 /** La extensión: solo esta fuente, sin íconos, activa al escribir. */
-export const menuBarra = autocompletion({ override: [fuenteBarra], icons: false, activateOnTyping: true, closeOnBlur: true });
+export const menuBarra = autocompletion({ override: [(ctx) => fuenteBarra(ctx)], icons: false, activateOnTyping: true, closeOnBlur: true });
+
+/** La misma, con entradas extra (las de IA del editor). */
+export const menuBarraCon = (/** @type {() => ExtraBarra[]} */ extras) =>
+  autocompletion({ override: [(ctx) => fuenteBarra(ctx, extras)], icons: false, activateOnTyping: true, closeOnBlur: true });

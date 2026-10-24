@@ -154,6 +154,8 @@ Los topes viven en `presupuestos.json`:
 - Se miden aparte del JS del rol, con lo que traen **además** de lo que ya cargó quien las pide.
 - Los lenguajes se miden de uno en uno y se compara el mayor.
 - Topes aplicados al cerrar H2: highlight 60 y lenguaje 35. KaTeX: 75 al cerrar O (medido integrado: 74,94; su CSS cuenta en el CSS total y sus fuentes se descargan aparte, solo las que usa cada fórmula).
+- IA (bloque Q): tres diferidas, cada una con tope de 25, aplicado tras medirlas integradas: `ia` (el panel) 3,54; `ia-autocompletado` 1,25; `ia-busqueda` 1,10.
+- Si a una diferida la piden dos vistas (el panel: el editor y la lectura), "lo ya cargado" es la **unión** de lo que cargan las dos. En Q da lo mismo que medir desde cada vista por separado (3,54 desde las dos). Que la lectura no descargue CodeMirror lo prueban además la unitaria `ia-diferidas` y la E2E en la red.
 - Mermaid queda fuera: es mejora futura, sin excepción al tope por chunk.
 
 **Por pantalla (informativo, sin tope).** Lo que descarga abrir cada vista justo después de la primera carga: su archivo y sus importaciones estáticas, sin lo que ya trajo la primera carga. Es el peor caso: si antes se abrió otra vista que comparte código, se descarga menos.
@@ -211,3 +213,29 @@ Los topes viven en `presupuestos.json`:
   - el DOM se construye con `createElement` y `createTextNode`;
   - el resaltado (`src/diferidas/highlight.js`) analiza el HTML de highlight.js en un documento aparte y copia solo `<span class="hljs-…">` y texto.
   - Pruebas: batería XSS unitaria (26 cargas, y la segunda capa sola) y E2E sobre el DOM real (13 cargas que marcarían `window` si se ejecutaran), con las mutaciones O01–O04.
+
+### Asistente de IA (bloque Q)
+
+Todo bajo demanda, nunca en el chunk de una vista. Cada vista importa solo su diferida:
+
+| Vista | Diferida | Qué trae |
+|---|---|---|
+| Editor | `src/diferidas/ia.js` al abrir el panel; `src/diferidas/ia-autocompletado.js` al activar las sugerencias | Explicar, Resumir, Mejorar; texto fantasma |
+| Lectura | `src/diferidas/ia.js` | Explicar y Resumir (sin CodeMirror: ADR 0004) |
+| Lista de documentos | `src/diferidas/ia-busqueda.js` | Búsqueda por significado |
+
+- **Mejorar nunca se aplica solo:** una propuesta con Reemplazar selección / Insertar debajo / Descartar. Al aceptarla se aplica como una transacción normal del editor, que viaja por el CRDT. Si la selección cambió mientras tanto, no se reemplaza.
+- **La salida de la IA es texto no confiable:** se muestra solo con el saneador de la vista renderizada. Los fragmentos de la búsqueda, como texto.
+- **Resumir y Mejorar llegan en streaming** (SSE sobre `fetch`). Detener aborta el pedido y el backend cancela la generación. Una corriente que se corta sin `fin` es un error.
+- **Sugerencias mientras se escribe:**
+  - desactivadas por defecto; el interruptor vive solo en memoria (no hay `localStorage`: ADR 0001);
+  - van por el WebSocket del documento (`ia.autocompletar` → `ia.sugerencia`);
+  - se ignora una sugerencia que no sea la del último pedido, o que llegue con el texto o el cursor cambiados;
+  - Tab acepta y Escape descarta; sin sugerencia, Tab sale del editor;
+  - el anuncio no se repite mientras se sigue escribiendo.
+- **Por rol:** quien lee tiene Explicar, Resumir y Buscar. Mejorar, las sugerencias y "Actualizar índice" son para quien edita o es propietario.
+- **Color:** el violeta es solo la marca de la IA (`--color-ia*`). Los errores de la IA van en `--color-peligro`, la presencia nunca es violeta y el foco sigue azul.
+- **Pruebas:**
+  - unitarias del panel real sobre un `document` mínimo (`tests/unitarias/dom-falso.mjs`, donde `innerHTML` lanza), del autocompletado con el estado real de CodeMirror, del SSE, y de la carga diferida sobre el código fuente;
+  - mutaciones Q01–Q17;
+  - E2E `tests/e2e/ia.spec.mjs` con la red observada y axe en los dos temas.

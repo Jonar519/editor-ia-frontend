@@ -1,6 +1,6 @@
 {
   "descripcion": "Topes del build en KiB con gzip. Los propone el equipo y los CONFIRMA POR ESCRITO la dueña o dueño del proyecto. Un tope en null está pendiente: scripts/presupuestos.mjs mide e informa, pero no falla por él. Con un número, el build falla si se pasa. Nunca se sube un tope para que el build pase.",
-  "estado": "topes confirmados por escrito: H1 (decisión C); primera carga 12 y rol público 20 al cerrar I; diferidas highlight y lenguaje al cerrar H2; KaTeX 75 al cerrar O (medido integrado: 74,94)",
+  "estado": "topes confirmados por escrito: H1 (decisión C); primera carga 12 y rol público 20 al cerrar I; diferidas highlight y lenguaje al cerrar H2; KaTeX 75 al cerrar O (medido integrado: 74,94); ia, ia-autocompletado e ia-busqueda 25 cada una en Q (medidas integradas: 3,54, 1,25 y 1,10)",
   "roles": {
     "publico": ["publico"],
     "lector": ["publico", "lector"],
@@ -9,6 +9,9 @@
   },
   "diferidas": {
     "highlight": { "patron": "^src/diferidas/highlight" },
+    "ia": { "patron": "^src/diferidas/ia\\.js$" },
+    "ia-autocompletado": { "patron": "^src/diferidas/ia-autocompletado\\.js$" },
+    "ia-busqueda": { "patron": "^src/diferidas/ia-busqueda\\.js$" },
     "katex": { "patron": "^src/diferidas/katex" },
     "lenguaje": { "patron": "node_modules/@codemirror/(lang-|legacy-modes)", "porChunk": true }
   },
@@ -17,6 +20,6 @@
     "jsPorRol": { "publico": 20, "lector": 140, "editor": 210, "admin": 225 },
     "maxChunkJs": 160,
     "cssTotal": 30,
-    "diferidas": { "highlight": 60, "katex": 75, "lenguaje": 35 }
+    "diferidas": { "highlight": 60, "ia": 25, "ia-autocompletado": 25, "ia-busqueda": 25, "katex": 75, "lenguaje": 35 }
   }
 }

@@ -18,9 +18,11 @@ export const CERROJO_REFRESCO = 'cuaderno-refresco';
 /**
  * @typedef {{ id: string, nombre: string, correo: string, rol: 'admin' | 'editor' | 'lector' }} Usuario
  * @typedef {{ accessToken: string, expiraEn: number, usuario: Usuario }} SesionRespuesta
- * @typedef {{ metodo?: string, cuerpo?: unknown, binario?: Blob, comoArchivo?: boolean, senal?: AbortSignal, sinSesion?: boolean }} OpcionesSolicitud
+ * @typedef {{ metodo?: string, cuerpo?: unknown, binario?: Blob, comoArchivo?: boolean, corriente?: boolean, tiempoMaximoMs?: number, senal?: AbortSignal, sinSesion?: boolean }} OpcionesSolicitud
  *   cuerpo: se manda como JSON. binario: se manda TAL CUAL con su tipo (el avatar). comoArchivo: la
  *   respuesta se devuelve como Archivo (blob y nombre del Content-Disposition), no como JSON.
+ *   corriente: devuelve la Response SIN leer (SSE de la IA, bloque Q); con tiempoMaximoMs propio, que
+ *   cubre también la lectura de la corriente.
  * @typedef {{ blob: Blob, nombre: string | null }} Archivo
  * @typedef {{ request: (nombre: string, fn: () => Promise<unknown>) => Promise<unknown> }} Cerrojos
  */
@@ -86,9 +88,10 @@ export function crearClienteApi(o = {}) {
    * @param {string} ruta
    * @param {RequestInit} init
    * @param {AbortSignal | undefined} senal
+   * @param {number} [maximoMs]
    */
-  async function enviar(ruta, init, senal) {
-    const limite = AbortSignal.timeout(tiempoMaximo);
+  async function enviar(ruta, init, senal, maximoMs = tiempoMaximo) {
+    const limite = AbortSignal.timeout(maximoMs);
     const senales = senal ? AbortSignal.any([senal, limite]) : limite;
     try {
       return await pedir(`${base}${ruta}`, { ...init, credentials: 'same-origin', cache: 'no-store', signal: senales });
@@ -172,7 +175,7 @@ export function crearClienteApi(o = {}) {
         cuerpo = JSON.stringify(op.cuerpo);
       }
       if (conSesion && acceso) cabeceras.authorization = `Bearer ${acceso}`;
-      const r = await enviar(ruta, { method: op.metodo ?? 'GET', headers: cabeceras, body: cuerpo }, op.senal);
+      const r = await enviar(ruta, { method: op.metodo ?? 'GET', headers: cabeceras, body: cuerpo }, op.senal, op.tiempoMaximoMs);
       if (r.status === 401 && conSesion && reintentar) {
         const err = await errorDe(r);
         if (err.codigo !== 'no_autenticado') throw err;
@@ -186,6 +189,7 @@ export function crearClienteApi(o = {}) {
         if (r.status === 401 && conSesion) olvidarSesion();
         throw err;
       }
+      if (op.corriente) return r;
       if (op.comoArchivo) return /** @type {Archivo} */ ({ blob: await r.blob(), nombre: nombreDeArchivo(r.headers.get('content-disposition')) });
       return r.json();
     };

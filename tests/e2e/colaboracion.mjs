@@ -53,6 +53,11 @@ export function relevo() {
     encoding.writeVarString(e, JSON.stringify(o));
     return encoding.toUint8Array(e);
   };
+  // Bloque Q: los mensajes de control que manda el cliente (ia.autocompletar), y quién los contesta.
+  /** @type {Record<string, unknown>[]} */
+  const controles = [];
+  /** @type {{ alControl: ((m: Record<string, unknown>, responder: (r: unknown) => void) => void) | null }} */
+  const atencion = { alControl: null };
 
   /** @param {WebSocketRoute} ws @param {Cuenta} cuenta @param {RolDocumento} rol */
   function conectar(ws, cuenta, rol) {
@@ -90,6 +95,10 @@ export function relevo() {
           encoding.writeVarString(salida, JSON.stringify(estado === null ? null : { ...estado, usuario: { id: cuenta.id, nombre: cuenta.nombre }, user: { ...estado.user, name: cuenta.nombre } }));
         }
         applyAwarenessUpdate(presencia, encoding.toUint8Array(salida), ws);
+      } else if (tipo === MENSAJE.control) {
+        const m = JSON.parse(decoding.readVarString(dec));
+        controles.push(m);
+        atencion.alControl?.(m, (r) => ws.send(Buffer.from(control(r))));
       }
     });
     ws.onClose(() => conexiones.delete(ws));
@@ -100,6 +109,10 @@ export function relevo() {
     conectar,
     /** Como el backend al cambiar los comentarios: aviso de control a todas las conexiones. */
     avisarComentarios: () => aTodos(control({ tipo: 'comentarios' }), null),
+    /** Los mensajes de control recibidos de los clientes, en orden. */
+    controles,
+    /** Quién contesta los mensajes de control (en la prueba, el autocompletado de la IA). */
+    atencion,
   };
 }
 
