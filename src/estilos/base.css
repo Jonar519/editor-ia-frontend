@@ -1039,3 +1039,74 @@ h2[tabindex='-1']:focus,
 .editor-documento .cm-editor .cm-line {
   padding-top: 0.2em;
 }
+
+/* ─── IA (bloque Q): el violeta SOLO marca a la IA; sus errores son avisos de error ─── */
+
+.boton-ia {
+  border-color: var(--color-ia);
+}
+
+.etiqueta-ia {
+  font-weight: 700;
+  color: var(--color-ia-texto);
+}
+
+.panel-ia {
+  margin: var(--espacio-4) 0;
+  padding: var(--espacio-4);
+  background-color: var(--color-ia-fondo);
+  border: 1px solid;
+  border-color: var(--color-ia);
+  border-left: 4px solid var(--color-ia);
+  border-radius: var(--radio);
+}
+
+.panel-ia h2 {
+  margin-top: 0;
+  font-size: var(--tamano-base);
+}
+
+.panel-ia .ia-estado {
+  color: var(--color-ia-texto);
+}
+
+.panel-ia .ia-respuesta:not(:empty) {
+  margin: var(--espacio-3) 0;
+  padding: var(--espacio-3);
+  background-color: var(--color-superficie);
+  border-radius: var(--radio);
+}
+
+.panel-ia select {
+  font: inherit;
+  color: var(--color-texto);
+  background-color: var(--color-superficie);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: var(--radio);
+}
+
+/* El texto fantasma del autocompletado: color de sugerencia y CURSIVA (no depende solo del color). */
+.editor-documento .cm-editor .sugerencia-ia {
+  color: var(--color-ia-sugerencia);
+  font-style: italic;
+}
+
+.buscar-ia {
+  margin: var(--espacio-3) 0;
+}
+
+.buscar-ia input {
+  font: inherit;
+  color: var(--color-texto);
+  background-color: var(--color-superficie);
+  border: 1px solid;
+  border-color: var(--color-borde-control);
+  border-radius: var(--radio);
+  padding: var(--espacio-1) var(--espacio-2);
+}
+
+.resultados-ia .fragmento-ia {
+  margin: var(--espacio-1) 0 var(--espacio-3);
+  white-space: pre-wrap;
+}
