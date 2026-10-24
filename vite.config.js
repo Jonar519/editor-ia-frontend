@@ -3,6 +3,7 @@
 // viaja sin CORS.
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
+import { CSP } from './scripts/lib/csp.mjs';
 import { listaPrecache, versionDe } from './scripts/sw-precache.mjs';
 
 // CUADERNO_API (opcional): otro backend local para pruebas manuales, por ejemplo uno contra la base de
@@ -53,15 +54,32 @@ function serviceWorker() {
   };
 }
 
+/**
+ * La CSP (scripts/lib/csp.mjs) como <meta> en el index.html del BUILD: aplica a lo que se sirve (vista
+ * previa o cualquier servidor estático). En desarrollo no: Vite inyecta los estilos de la app como <style>
+ * en línea. frame-ancestors no funciona en <meta>: va en la cabecera del despliegue.
+ * @returns {import('vite').Plugin}
+ */
+function politicaDeContenido() {
+  return {
+    name: 'cuaderno-csp',
+    apply: 'build',
+    transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: CSP }, injectTo: 'head-prepend' }],
+  };
+}
+
 export default defineConfig({
   server: servidor,
   preview: servidor,
-  plugins: [serviceWorker()],
+  plugins: [serviceWorker(), politicaDeContenido()],
   build: {
     // El manifiesto dice qué archivo sale de cada módulo: scripts/presupuestos.mjs lo usa para medir el
     // JS de primera carga y el de cada rol.
     manifest: true,
     target: 'es2023',
+    // Ninguna fuente se incrusta como data: (font-src 'self'; decisión escrita del bloque R): sale como
+    // archivo propio. Lo demás sigue el límite por defecto de Vite.
+    assetsInlineLimit: (archivo) => (/\.(woff2?|ttf|otf|eot)$/i.test(archivo) ? false : undefined),
     sourcemap: false,
   },
 });
