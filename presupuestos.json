@@ -1,6 +1,6 @@
 {
   "descripcion": "Topes del build en KiB con gzip. Los propone el equipo y los CONFIRMA POR ESCRITO la dueña o dueño del proyecto. Un tope en null está pendiente: scripts/presupuestos.mjs mide e informa, pero no falla por él. Con un número, el build falla si se pasa. Nunca se sube un tope para que el build pase.",
-  "estado": "topes confirmados por escrito: H1 (decisión C); primera carga 12 y rol público 20 al cerrar I; diferidas highlight y lenguaje al cerrar H2; KaTeX 75 al cerrar O (medido integrado: 74,94); ia, ia-autocompletado e ia-busqueda 25 cada una en Q (medidas integradas: 3,54, 1,19 y 1,10)",
+  "estado": "topes confirmados por escrito: H1 (decisión C); primera carga 12 y rol público 20 al cerrar I; diferidas highlight y lenguaje al cerrar H2; KaTeX 75 al cerrar O (medido integrado: 74,94); ia, ia-autocompletado e ia-busqueda 25 cada una en Q (medidas integradas: 3,54, 1,25 y 1,10)",
   "roles": {
     "publico": ["publico"],
     "lector": ["publico", "lector"],

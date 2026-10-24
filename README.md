@@ -154,7 +154,7 @@ Los topes viven en `presupuestos.json`:
 - Se miden aparte del JS del rol, con lo que traen **además** de lo que ya cargó quien las pide.
 - Los lenguajes se miden de uno en uno y se compara el mayor.
 - Topes aplicados al cerrar H2: highlight 60 y lenguaje 35. KaTeX: 75 al cerrar O (medido integrado: 74,94; su CSS cuenta en el CSS total y sus fuentes se descargan aparte, solo las que usa cada fórmula).
-- IA (bloque Q): tres diferidas, cada una con tope de 25, aplicado tras medirlas integradas: `ia` (el panel) 3,54; `ia-autocompletado` 1,19; `ia-busqueda` 1,10.
+- IA (bloque Q): tres diferidas, cada una con tope de 25, aplicado tras medirlas integradas: `ia` (el panel) 3,54; `ia-autocompletado` 1,25; `ia-busqueda` 1,10.
 - Si a una diferida la piden dos vistas (el panel: el editor y la lectura), "lo ya cargado" es la **unión** de lo que cargan las dos. En Q da lo mismo que medir desde cada vista por separado (3,54 desde las dos). Que la lectura no descargue CodeMirror lo prueban además la unitaria `ia-diferidas` y la E2E en la red.
 - Mermaid queda fuera: es mejora futura, sin excepción al tope por chunk.
 
