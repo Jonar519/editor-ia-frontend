@@ -1,12 +1,12 @@
 // Documentos (bloque L): los espacios de la cuenta con sus documentos. Una cuenta que no es de solo
 // lectura crea espacios, y documentos en los espacios donde es propietaria o editora. Los permisos los
 // decide el backend: aquí solo se ocultan los botones que darían 403.
+import { mensajeParaPersona } from '../../api/errores.js';
 import { aviso, h } from '../../dom.js';
 import { anunciar } from '../../componentes/anunciar.js';
 import { conDatos } from '../../componentes/estado.js';
 import { campo, controlEnvio, erroresEnCampos } from '../../componentes/formulario.js';
 import { api } from '../../sesion.js';
-import { cargarIa } from '../../ia-carga.js';
 
 /**
  * @typedef {{ id: string, nombre: string, rol: 'propietario' | 'editor' | 'lector', miembros: number }} Espacio
@@ -64,7 +64,8 @@ function filaDocumento(d) {
 }
 
 /**
- * Búsqueda por significado (bloque Q): el formulario es de aquí; buscar carga la IA bajo demanda.
+ * Búsqueda por significado (bloque Q): el formulario es de aquí; buscar carga src/diferidas/ia-busqueda.js
+ * bajo demanda (solo esa diferida: ni el panel de IA ni CodeMirror).
  * @param {Espacio} e
  */
 function buscadorIa(e) {
@@ -83,7 +84,10 @@ function buscadorIa(e) {
   );
   form.addEventListener('submit', (ev) => {
     ev.preventDefault();
-    void cargarIa().then((m) => m.buscarEnEspacio({ espacioId: e.id, consulta: consulta.value, salida }));
+    void import('../../diferidas/ia-busqueda.js').then(
+      (m) => m.buscarEnEspacio({ espacioId: e.id, consulta: consulta.value, salida }),
+      (err) => salida.replaceChildren(aviso('error', mensajeParaPersona(err))),
+    );
   });
   return form;
 }
