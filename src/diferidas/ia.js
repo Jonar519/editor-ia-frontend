@@ -1,5 +1,8 @@
-// Carga diferida de la IA (bloque Q; decisiones escritas del diseño). TODO el código de IA del navegador
-// está aquí (y en ia-*.js): el editor y la lectura solo tienen los botones y un import() bajo demanda.
+// Carga diferida del panel de IA (bloque Q; decisiones escritas del diseño). El código de IA del navegador
+// está en tres diferidas, cada una importada SOLO por la vista que la usa (opción 1, decidida por escrito):
+// esta (el panel: editor y lectura), ia-autocompletado.js (solo el editor, donde CodeMirror ya está) e
+// ia-busqueda.js (solo la lista de documentos). Esta NO importa CodeMirror: quien lee no lo descarga
+// (ADR 0004).
 //
 //   - Panel de IA: explicar la selección, resumir el documento y (editor o propietario) mejorar la
 //     selección en tres estilos. Resumir y mejorar llegan en streaming (SSE sobre fetch POST) y se pueden
@@ -10,17 +13,17 @@
 //     enlaces restringidos), nunca con innerHTML.
 //   - Errores en --color-peligro (aviso de error); el violeta es solo la marca de la IA.
 //   - Lectores de pantalla: el texto en streaming se anuncia por frases, no por fragmento.
-//   - Búsqueda por significado en la lista de documentos del espacio.
+//   - Las sugerencias mientras se escribe: el panel solo tiene el interruptor; quien lo ofrece (el editor)
+//     carga ia-autocompletado.js al activarlo.
 import { aviso, h } from '../dom.js';
 import { anunciar } from '../componentes/anunciar.js';
 import { renderizar } from '../markdown/vista.js';
 import { api } from '../sesion.js';
-import { crearAutocompletado } from './ia-autocompletado.js';
 import { mensajeIa } from './ia-mensajes.js';
 import { leerSse } from './ia-sse.js';
 
 /** Topes del backend (MAXIMOS_IA): lo que se manda por pedido. */
-export const MAXIMOS = { explicar: 8000, transformar: 40_000, consulta: 500 };
+export const MAXIMOS = { explicar: 8000, transformar: 40_000 };
 /** El backend corta Resumir y Mejorar a los 60 s; el fetch espera un poco más. */
 const TIEMPO_CORRIENTE_MS = 75_000;
 /** Cada cuánto, como mínimo, se anuncia lo nuevo del streaming (por frases completas). */
@@ -68,18 +71,14 @@ export function crearAnunciadorFrases(decir, ahora = () => Date.now()) {
  *   texto: () => string,
  *   seleccion: () => Seleccion | null,
  *   aplicar?: { reemplazar: (s: Seleccion, nuevo: string) => boolean, insertarDebajo: (s: Seleccion, nuevo: string) => void },
- *   autocompletado?: {
- *     reconfigurar: (extension: import('@codemirror/state').Extension) => void,
- *     control: { enviar: (m: unknown) => boolean, oir: (f: (c: Record<string, unknown>) => void) => () => void },
- *   },
+ *   sugerencias?: { poner: (si: boolean, alError: (codigo: string) => void) => Promise<void> },
  *   alCerrar: () => void,
  * }} o
  */
 export function panelIa(o) {
   /** @type {AbortController | null} */
   let enCurso = null;
-  /** @type {ReturnType<typeof crearAutocompletado> | null} */
-  let auto = null;
+  let sugiriendo = false;
 
   const estado = h('p', { class: 'ia-estado', role: 'status' });
   const errores = h('div', { class: 'ia-errores' });
@@ -122,7 +121,7 @@ export function panelIa(o) {
   function porRol() {
     const puede = escribe(o.rol());
     mejorar.hidden = !puede || !o.aplicar;
-    sugerencias.hidden = !puede || !o.autocompletado;
+    sugerencias.hidden = !puede || !o.sugerencias;
     bIndice.hidden = !puede;
     if (!puede && interruptor.checked) {
       interruptor.checked = false;
@@ -287,30 +286,27 @@ export function panelIa(o) {
     reemplazar.focus();
   }
 
-  function activarSugerencias(/** @type {boolean} */ si) {
-    const a = o.autocompletado;
-    if (!a) return;
-    if (si && !auto) {
-      auto = crearAutocompletado({
-        control: a.control,
-        anunciar,
-        alError: (codigo) => {
-          // Sin tope o sin permiso no tiene sentido seguir pidiendo; lo demás (una sugerencia lenta) se ignora.
-          if (codigo === 'tope_diario_ia' || codigo === 'sin_permiso' || codigo === 'ia_no_disponible') {
-            interruptor.checked = false;
-            activarSugerencias(false);
-            error({ codigo });
-          }
-        },
-      });
-      a.reconfigurar(auto.extension);
-      estado.textContent = 'Sugerencias de la IA activadas.';
-    } else if (!si && auto) {
-      auto.destruir();
-      auto = null;
-      a.reconfigurar([]);
-      estado.textContent = 'Sugerencias de la IA desactivadas.';
+  /** Sin tope o sin permiso no tiene sentido seguir pidiendo; lo demás (una sugerencia lenta) se ignora. */
+  const alErrorSugerencias = (/** @type {string} */ codigo) => {
+    if (codigo === 'tope_diario_ia' || codigo === 'sin_permiso' || codigo === 'ia_no_disponible') {
+      interruptor.checked = false;
+      activarSugerencias(false);
+      error({ codigo });
     }
+  };
+
+  function activarSugerencias(/** @type {boolean} */ si) {
+    const a = o.sugerencias;
+    if (!a || si === sugiriendo) return;
+    sugiriendo = si;
+    estado.textContent = si ? 'Sugerencias de la IA activadas.' : 'Sugerencias de la IA desactivadas.';
+    a.poner(si, alErrorSugerencias).catch((e) => {
+      // No se pudo cargar el autocompletado (sin red): el interruptor vuelve a apagado.
+      sugiriendo = false;
+      interruptor.checked = false;
+      estado.textContent = '';
+      error(e);
+    });
   }
 
   bExplicar.addEventListener('click', () => void explicar());
@@ -378,42 +374,4 @@ export function panelIa(o) {
       activarSugerencias(false);
     },
   };
-}
-
-/**
- * Búsqueda por significado en un espacio: pinta los resultados en `salida`.
- * @param {{ espacioId: string, consulta: string, salida: HTMLElement }} o
- */
-export async function buscarEnEspacio(o) {
-  const consulta = o.consulta.trim().slice(0, MAXIMOS.consulta);
-  if (!consulta) return;
-  o.salida.replaceChildren(h('p', { role: 'status' }, 'Buscando…'));
-  try {
-    const r = /** @type {{ resultados: { documentoId: string, titulo: string, fragmento: number, texto: string, similitud: number }[] }} */ (
-      await api.solicitar(`/espacios/${encodeURIComponent(o.espacioId)}/buscar`, { metodo: 'POST', cuerpo: { consulta } })
-    );
-    if (r.resultados.length === 0) {
-      o.salida.replaceChildren(h('p', { role: 'status' }, 'No se encontró nada parecido en este espacio.'));
-      return;
-    }
-    o.salida.replaceChildren(
-      h('p', { role: 'status' }, `${String(r.resultados.length)} ${r.resultados.length === 1 ? 'resultado' : 'resultados'} parecidos.`),
-      h(
-        'ol',
-        { class: 'resultados-ia' },
-        ...r.resultados.map((x) =>
-          h(
-            'li',
-            {},
-            h('a', { href: `#/documentos/${encodeURIComponent(x.documentoId)}` }, x.titulo),
-            h('span', { class: 'ayuda' }, ` · parecido: ${String(Math.round(x.similitud * 100))} %`),
-            // El fragmento como TEXTO (no Markdown): es contenido del documento, no de la IA.
-            h('p', { class: 'fragmento-ia' }, x.texto.length > 300 ? `${x.texto.slice(0, 300)}…` : x.texto),
-          ),
-        ),
-      ),
-    );
-  } catch (e) {
-    o.salida.replaceChildren(aviso('error', mensajeIa(e)));
-  }
 }

@@ -24,7 +24,7 @@ import { vistaRenderizada } from '../../markdown/vista-renderizada.js';
 import { COMANDOS } from './comandos.js';
 import { menuBarraCon } from './menu-barra.js';
 import { abrirPaleta } from './paleta.js';
-import { cargarIa } from '../../ia-carga.js';
+import { anunciar } from '../../componentes/anunciar.js';
 
 const esMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const MOD = esMac ? '⌘' : 'Ctrl';
@@ -127,15 +127,26 @@ export async function render(params) {
   };
   botonPrevia.addEventListener('click', () => mostrarPrevia(botonPrevia.getAttribute('aria-pressed') !== 'true'));
 
-  // Bloque Q: la IA, BAJO DEMANDA (src/diferidas/ia.js se descarga al primer uso).
+  // Bloque Q: la IA, BAJO DEMANDA: el panel (src/diferidas/ia.js) se descarga al primer uso, y el
+  // autocompletado (src/diferidas/ia-autocompletado.js) solo al activar el interruptor. Ninguno entra en
+  // el chunk del editor.
   const lugarIa = h('div', { class: 'lugar-ia' });
   const botonIa = h('button', { type: 'button', class: 'boton boton-chico boton-ia', 'aria-expanded': 'false', 'aria-controls': 'panel-ia' }, 'IA');
+  /** @type {{ extension: import('@codemirror/state').Extension, destruir: () => void } | null} */
+  let autoIa = null;
+  let quiereAuto = false;
   /** @param {(p: NonNullable<typeof panelIa>) => unknown} f */
   const conIa = async (f) => {
     const v = vista;
     if (!v) return;
     if (!panelIa) {
-      const m = await cargarIa();
+      let m;
+      try {
+        m = await import('../../diferidas/ia.js');
+      } catch (err) {
+        lugarIa.replaceChildren(aviso('error', mensajeParaPersona(err)));
+        return;
+      }
       panelIa ??= m.panelIa({
         documentoId: d.id,
         rol: () => rolActual,
@@ -159,13 +170,28 @@ export async function render(params) {
             v.focus();
           },
         },
-        autocompletado: { reconfigurar: (ext) => v.dispatch({ effects: sugerenciasIa.reconfigure(ext) }), control: vivo.control },
+        sugerencias: {
+          poner: async (si, alError) => {
+            quiereAuto = si;
+            if (si && !autoIa) {
+              const a = await import('../../diferidas/ia-autocompletado.js');
+              // Mientras se descargaba, se pudo apagar (o activar dos veces).
+              if (!quiereAuto || autoIa) return;
+              autoIa = a.crearAutocompletado({ control: vivo.control, anunciar, alError });
+              v.dispatch({ effects: sugerenciasIa.reconfigure(autoIa.extension) });
+            } else if (!si && autoIa) {
+              autoIa.destruir();
+              autoIa = null;
+              v.dispatch({ effects: sugerenciasIa.reconfigure([]) });
+            }
+          },
+        },
         alCerrar: () => {
           botonIa.setAttribute('aria-expanded', 'false');
           v.focus();
         },
       });
-      lugarIa.append(panelIa.el);
+      lugarIa.replaceChildren(panelIa.el);
     }
     botonIa.setAttribute('aria-expanded', 'true');
     await f(panelIa);

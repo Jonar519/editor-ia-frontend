@@ -11,7 +11,6 @@ import { panelComentarios } from '../../comentarios/panel.js';
 import { vistaRenderizada } from '../../markdown/vista-renderizada.js';
 import { fuenteARango, seleccionAFuente } from '../../comentarios/posiciones.js';
 import { puedeEditar } from './documentos.js';
-import { cargarIa } from '../../ia-carga.js';
 
 /** @param {Record<string, string>} params */
 export async function render(params) {
@@ -118,7 +117,8 @@ export async function render(params) {
       p.destruir();
     });
   }
-  // Bloque Q: la IA (explicar y resumir; quien lee no mejora ni autocompleta), BAJO DEMANDA.
+  // Bloque Q: la IA (explicar y resumir; quien lee no mejora ni autocompleta), BAJO DEMANDA. El panel
+  // (src/diferidas/ia.js) no trae CodeMirror: leer sigue sin descargarlo (ADR 0004; prueba E2E).
   const lugarIa = h('div', { class: 'lugar-ia' });
   const botonIa = h('button', { type: 'button', class: 'boton boton-chico boton-ia', 'aria-expanded': 'false', 'aria-controls': 'panel-ia' }, 'IA');
   /** @type {ReturnType<import('../../diferidas/ia.js')['panelIa']> | null} */
@@ -128,7 +128,7 @@ export async function render(params) {
       panelIa.cerrar();
       return;
     }
-    void cargarIa().then((m) => {
+    void import('../../diferidas/ia.js').then((m) => {
       panelIa ??= m.panelIa({
         documentoId: d.id,
         rol: () => d.rol,
@@ -146,10 +146,10 @@ export async function render(params) {
           botonIa.focus();
         },
       });
-      if (!panelIa.el.isConnected) lugarIa.append(panelIa.el);
+      if (!panelIa.el.isConnected) lugarIa.replaceChildren(panelIa.el);
       botonIa.setAttribute('aria-expanded', 'true');
       panelIa.abrir();
-    });
+    }, (err) => lugarIa.replaceChildren(aviso('error', mensajeParaPersona(err))));
   });
   vivo.doc.on('destroy', () => panelIa?.destruir());
 
