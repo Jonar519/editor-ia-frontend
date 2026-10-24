@@ -56,6 +56,15 @@
   --paleta-ambar-800: #634000;
   --paleta-ambar-950: #2e230a;
 
+  /* Violeta: RESERVADO a la IA (bloque Q; significado y contrastes aprobados por escrito). */
+  --paleta-violeta-50: #f2edfc;
+  --paleta-violeta-300: #c7b5f7;
+  --paleta-violeta-350: #b39cf2;
+  --paleta-violeta-400: #a98bf0;
+  --paleta-violeta-600: #6f42c1;
+  --paleta-violeta-700: #5b31a6;
+  --paleta-violeta-950: #221a36;
+
   --paleta-rojo-50: #fdeceb;
   --paleta-rojo-300: #ffb0a9;
   --paleta-rojo-400: #ff7a70;
@@ -147,6 +156,11 @@
   --color-codigo-titulo: var(--paleta-codigo-cian);
   --color-codigo-tipo: var(--paleta-codigo-naranja);
 
+  --color-ia: var(--paleta-violeta-600);
+  --color-ia-fondo: var(--paleta-violeta-50);
+  --color-ia-texto: var(--paleta-violeta-700);
+  --color-ia-sugerencia: var(--paleta-violeta-600);
+
   /* ─── Tipografía, espacio, forma y movimiento (iguales en los dos temas) ──── */
   /* Fuentes AUTOALOJADAS (src/main.js las importa de @fontsource-variable, licencia SIL OFL 1.1): se sirven
      desde el mismo origen, sin CDN ni terceros. Solo latin y latin-ext; unicode-range hace que el navegador
@@ -219,5 +233,10 @@
     --color-codigo-numero: var(--paleta-codigo-ambar-noche);
     --color-codigo-titulo: var(--paleta-codigo-cian-noche);
     --color-codigo-tipo: var(--paleta-codigo-naranja-noche);
+
+    --color-ia: var(--paleta-violeta-400);
+    --color-ia-fondo: var(--paleta-violeta-950);
+    --color-ia-texto: var(--paleta-violeta-300);
+    --color-ia-sugerencia: var(--paleta-violeta-350);
   }
 }
