@@ -67,6 +67,7 @@ export function adelantado(doc, vectorServidor) {
  *   alPendiente?: (hay: boolean, cuantos: number) => void,
  *   alRechazados?: () => void,
  *   alComentarios?: () => void,
+ *   alControl?: (c: Record<string, unknown>) => void,
  *   sinEnviarInicial?: number,
  *   url?: string,
  *   ventana?: Pick<Window, 'addEventListener' | 'removeEventListener'>,
@@ -239,6 +240,8 @@ export function conectarDocumento(o) {
           o.alRol?.(c.rol);
         } else if (c.tipo === 'comentarios') {
           o.alComentarios?.();
+        } else {
+          o.alControl?.(c); // bloque Q: ia.sugerencia
         }
       }
     };
@@ -273,6 +276,13 @@ export function conectarDocumento(o) {
   return {
     /** ¿Hay cambios locales sin enviar? */
     pendiente: () => pendiente,
+    /** Un mensaje de control (JSON) al servidor (bloque Q: ia.autocompletar). false si no hay conexión. */
+    enviarControl(/** @type {unknown} */ m) {
+      const e = encoding.createEncoder();
+      encoding.writeVarUint(e, MENSAJE.control);
+      encoding.writeVarString(e, JSON.stringify(m));
+      return enviar(encoding.toUint8Array(e));
+    },
     /** Cierra a propósito (al salir de la vista): sin reintentos, y la presencia se va. */
     cerrar() {
       terminado = true;

@@ -90,6 +90,8 @@ export async function abrirDocumento(o) {
 
   /** @type {Set<() => void>} */
   const oyentesComentarios = new Set();
+  /** @type {Set<(c: Record<string, unknown>) => void>} */
+  const oyentesControl = new Set();
 
   // El estado local va vacío: el servidor le pone la cuenta y el nombre; el editor, el cursor.
   presencia.setLocalState({});
@@ -110,6 +112,9 @@ export async function abrirDocumento(o) {
     // Los comentarios cambiaron (bloque N): quien los muestra los vuelve a pedir.
     alComentarios: () => {
       for (const f of oyentesComentarios) f();
+    },
+    alControl: (c) => {
+      for (const f of oyentesControl) f(c);
     },
     sinEnviarInicial,
     alPendiente: (hay, cuantos) => {
@@ -149,6 +154,14 @@ export async function abrirDocumento(o) {
     alCambiarComentarios: (/** @type {() => void} */ f) => {
       oyentesComentarios.add(f);
       return () => oyentesComentarios.delete(f);
+    },
+    /** Mensajes de control propios (bloque Q, autocompletado): mandar y oír. */
+    control: {
+      enviar: (/** @type {unknown} */ m) => conexion.enviarControl(m),
+      oir: (/** @type {(c: Record<string, unknown>) => void} */ f) => {
+        oyentesControl.add(f);
+        return () => oyentesControl.delete(f);
+      },
     },
   };
 }
