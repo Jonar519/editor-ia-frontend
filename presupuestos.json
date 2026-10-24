@@ -9,6 +9,7 @@
   },
   "diferidas": {
     "highlight": { "patron": "^src/diferidas/highlight" },
+    "ia": { "patron": "^src/diferidas/ia" },
     "katex": { "patron": "^src/diferidas/katex" },
     "lenguaje": { "patron": "node_modules/@codemirror/(lang-|legacy-modes)", "porChunk": true }
   },
@@ -17,6 +18,6 @@
     "jsPorRol": { "publico": 20, "lector": 140, "editor": 210, "admin": 225 },
     "maxChunkJs": 160,
     "cssTotal": 30,
-    "diferidas": { "highlight": 60, "katex": 75, "lenguaje": 35 }
+    "diferidas": { "highlight": 60, "ia": null, "katex": 75, "lenguaje": 35 }
   }
 }
