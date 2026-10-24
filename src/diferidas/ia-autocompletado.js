@@ -40,11 +40,24 @@ export function crearAnunciador(/** @type {(texto: string) => void} */ anunciar)
 }
 
 /** @typedef {{ pos: number, texto: string }} Fantasma */
+/** @typedef {{ pedido: number, pos: number, doc: import('@codemirror/state').Text }} Esperado */
 
 /** @type {import('@codemirror/state').StateEffectType<Fantasma>} */
-const poner = StateEffect.define();
+export const poner = StateEffect.define();
 /** @type {import('@codemirror/state').StateEffectType<null>} */
 const quitar = StateEffect.define();
+
+/**
+ * ¿Se muestra esta sugerencia? Solo si es la del ÚLTIMO pedido, trae texto, y el documento y el cursor
+ * siguen exactamente como cuando se pidió (si no, llegó tarde y se ignora).
+ * @param {Record<string, unknown>} c el mensaje ia.sugerencia
+ * @param {Esperado} esperado
+ * @param {import('@codemirror/state').EditorState} estado
+ */
+export function vigente(c, esperado, estado) {
+  const s = estado.selection.main;
+  return c.pedido === esperado.pedido && typeof c.texto === 'string' && c.texto !== '' && estado.doc === esperado.doc && s.empty && s.head === esperado.pos;
+}
 
 class Widget extends WidgetType {
   constructor(/** @type {string} */ texto) {
@@ -67,7 +80,7 @@ class Widget extends WidgetType {
 }
 
 /** El texto fantasma visible (o null). Cualquier cambio del texto o del cursor lo quita. */
-const campo = StateField.define({
+export const campo = StateField.define({
   /** @returns {Fantasma | null} */
   create: () => null,
   update(valor, tr) {
@@ -81,6 +94,29 @@ const campo = StateField.define({
     EditorView.decorations.from(f, (v) => (v ? Decoration.set([Decoration.widget({ widget: new Widget(v.texto), side: 1 }).range(v.pos)]) : Decoration.none)),
 });
 
+/** @typedef {{ state: import('@codemirror/state').EditorState, dispatch: (tr: import('@codemirror/state').TransactionSpec) => void }} VistaMinima */
+
+/**
+ * Tab: escribe la sugerencia como un cambio normal del editor. Sin sugerencia, false (Tab sale del editor).
+ * @param {VistaMinima} v
+ */
+export function aceptar(v) {
+  const f = v.state.field(campo, false);
+  if (!f) return false;
+  v.dispatch({ changes: { from: f.pos, insert: f.texto }, selection: { anchor: f.pos + f.texto.length }, effects: quitar.of(null), userEvent: 'input.ia' });
+  return true;
+}
+
+/**
+ * Escape: quita la sugerencia sin tocar el documento. Sin sugerencia, false (Escape sigue su camino).
+ * @param {VistaMinima} v
+ */
+export function descartar(v) {
+  if (!v.state.field(campo, false)) return false;
+  v.dispatch({ effects: quitar.of(null) });
+  return true;
+}
+
 /**
  * @param {{
  *   control: { enviar: (m: unknown) => boolean, oir: (f: (c: Record<string, unknown>) => void) => () => void },
@@ -92,7 +128,7 @@ const campo = StateField.define({
 export function crearAutocompletado(o) {
   const anunciador = crearAnunciador(o.anunciar);
   let ultimo = 0;
-  /** @type {{ pedido: number, pos: number, doc: import('@codemirror/state').Text } | null} */
+  /** @type {Esperado | null} */
   let esperado = null;
   /** @type {EditorView | null} */
   let vista = null;
@@ -106,10 +142,8 @@ export function crearAutocompletado(o) {
       o.alError(c.error);
       return;
     }
-    const s = v.state.selection.main;
-    // Llegó tarde: el texto o el cursor cambiaron desde el pedido.
-    if (typeof c.texto !== 'string' || c.texto === '' || v.state.doc !== e.doc || !s.empty || s.head !== e.pos) return;
-    v.dispatch({ effects: poner.of({ pos: e.pos, texto: c.texto }) });
+    if (!vigente(c, e, v.state)) return;
+    v.dispatch({ effects: poner.of({ pos: e.pos, texto: /** @type {string} */ (c.texto) }) });
     anunciador.quizas();
   });
 
@@ -153,9 +187,7 @@ export function crearAutocompletado(o) {
       {
         key: 'Tab',
         run: (v) => {
-          const f = v.state.field(campo, false);
-          if (!f) return false; // sin sugerencia, Tab sale del editor
-          v.dispatch({ changes: { from: f.pos, insert: f.texto }, selection: { anchor: f.pos + f.texto.length }, effects: quitar.of(null), userEvent: 'input.ia' });
+          if (!aceptar(v)) return false;
           anunciador.rearmar();
           return true;
         },
@@ -163,8 +195,7 @@ export function crearAutocompletado(o) {
       {
         key: 'Escape',
         run: (v) => {
-          if (!v.state.field(campo, false)) return false;
-          v.dispatch({ effects: quitar.of(null) });
+          if (!descartar(v)) return false;
           anunciador.rearmar();
           return true;
         },
