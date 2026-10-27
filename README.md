@@ -203,6 +203,12 @@ Los topes viven en `presupuestos.json`:
 
 - Sin `innerHTML`: los nodos se crean con `h()` (`src/dom.js`), el texto entra como texto y los atributos `on*` se rechazan.
 - `<meta name="referrer" content="no-referrer">`.
+- **CSP (bloque R, `scripts/lib/csp.mjs`):** va como `<meta>` en el `index.html` del build (en desarrollo no, porque Vite mete estilos en línea).
+  - `script-src 'self'` estricto, sin `'unsafe-inline'` ni `'unsafe-eval'`; `worker-src 'self'`; `object-src 'none'`; `base-uri 'none'`; todo lo demás, del propio origen.
+  - `'unsafe-inline'` solo en `style-src-elem` (el `<style>` de CodeMirror) y en `style-src-attr` (los colores de presencia de y-codemirror): es el riesgo residual R-06 del modelo de amenazas.
+  - Ninguna fuente se incrusta como `data:` (`assetsInlineLimit`).
+  - Pruebas: la unitaria `csp.test.mjs` con las mutaciones R03–R06, la E2E `csp.spec.mjs` (un script en línea no corre), y cualquier violación en cualquier E2E hace fallar la prueba.
+  - Para el despliegue: `frame-ancestors` por cabecera y un nonce por respuesta (`EditorView.cspNonce`).
 - **Vista renderizada del Markdown (bloque O, `src/markdown/vista.js`):**
   - el Markdown pasa por mdast con posiciones (micromark con tablas, tachado y tareas de GFM), **sin HTML**: el HTML escrito se ve como texto literal;
   - primera capa: solo se generan elementos y atributos de la lista `PERMITIDOS`;

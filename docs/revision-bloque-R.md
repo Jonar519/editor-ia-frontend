@@ -13,6 +13,10 @@ El hero (`src/vistas/publico/inicio.js`) describe funciones que **todavía no ex
 
 Si alguna no queda lista, el texto se quita o se reescribe para decir solo lo que es cierto. No se entrega una promesa falsa.
 
+**Resultado (R1):**
+- **Versiones: queda.** «Verificar la cadena» en el historial, para cualquier rol: la base recalcula todas las versiones y la interfaz dice «íntegra» o «alterada desde la versión N». Prueba de integración que manipula una versión con el dueño de la base, E2E y mutaciones (backend R01–R03, frontend R01–R02).
+- **Asistente: se reescribió** a «Un asistente que explica, resume y mejora tu documentación, y busca por significado en tu espacio.» (decisión escrita). No responde preguntas con citas de otros documentos. La E2E del hero fija los tres textos.
+
 **Decisión escrita (cierre del bloque I):** las dos ideas se quedan por ahora. Si los bloques N, P2 y Q no llegan a existir antes de la entrega, **se quitan**.
 
 ## Sin medir al cerrar el tramo 2 (pruebas manuales al final)
@@ -30,7 +34,7 @@ Anotado por escrito al cerrar el bloque J. Se prueban a mano con la guía consol
 
 | Qué | Por qué | Cómo se cierra |
 |---|---|---|
-| CSP con `worker-src 'self'` | La comparación de versiones (bloque N) corre en un Web Worker propio (`src/diff/trabajador.js`); una CSP sin `worker-src` (o con un `default-src` que no lo permita) lo bloquea | En la CSP del despliegue: `worker-src 'self'`. Se prueba comparando dos versiones en el sitio desplegado. |
+| CSP con `worker-src 'self'` | La comparación de versiones (bloque N) corre en un Web Worker propio (`src/diff/trabajador.js`); una CSP sin `worker-src` (o con un `default-src` que no lo permita) lo bloquea | **Hecho en R2.** La CSP va como `<meta>` en el build (`scripts/lib/csp.mjs`) con `worker-src 'self'`, y la E2E compara versiones bajo ella. **Queda para el despliegue:** `frame-ancestors 'none'` por cabecera (no funciona en `<meta>`) y un nonce por respuesta con `EditorView.cspNonce` en lugar de `'unsafe-inline'` en `style-src-elem` (riesgo R-06 del modelo de amenazas del backend). |
 | Riesgo R-02: versiones sin tope | Abuso de almacenamiento (ver `docs/modelo-amenazas.md` del backend) | Revisar con el monitoreo del tamaño de la base; decidir si hace falta cuota o retención. |
 
 ## Pendientes reabribles si queda tiempo

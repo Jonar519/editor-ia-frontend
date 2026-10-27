@@ -7,7 +7,7 @@ import * as encoding from 'lib0/encoding';
 import { applyAwarenessUpdate, Awareness, encodeAwarenessUpdate } from 'y-protocols/awareness';
 import { readSyncMessage, writeSyncStep1 } from 'y-protocols/sync';
 import * as Y from 'yjs';
-import { cuerpoError, expect } from './fixtures.mjs';
+import { cuerpoError, expect, vigilarCsp } from './fixtures.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {import('@playwright/test').Route} Route */
@@ -177,6 +177,13 @@ export async function segundaPersona(browser, baseURL, colorScheme) {
   const contexto = await browser.newContext({ baseURL, locale: 'es-MX', timezoneId: 'UTC', colorScheme, serviceWorkers: 'block' });
   const pagina = await contexto.newPage();
   await pagina.route('**/api/**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: cuerpoError('sin_refresco', 'Inicia sesión de nuevo') }));
+  // Como la fixture (bloque R): al cerrar su contexto, la prueba falla si su página violó la CSP.
+  const violaciones = await vigilarCsp(pagina);
+  const cerrar = contexto.close.bind(contexto);
+  contexto.close = async (/** @type {any} */ ...a) => {
+    await cerrar(...a);
+    expect(violaciones, 'violaciones de la CSP (segunda persona)').toEqual([]);
+  };
   return { contexto, pagina };
 }
 
@@ -251,6 +258,9 @@ export function versionesSimuladas(servidor) {
   const versiones = [];
   const textoVivo = () => servidor.doc.getText('contenido').toString();
   const sinTexto = (/** @type {(typeof versiones)[number]} */ v) => ({ ...v, texto: undefined });
+  // Bloque R: la verificación la recalcula la base (prueba de integración del backend); aquí se simula
+  // su respuesta, y `alterar(n)` hace como si alguien hubiera manipulado la versión n en la base.
+  const cadena = { alteradaDesde: /** @type {number | null} */ (null) };
   /** @param {Page} page @param {Cuenta} cuenta */
   async function registrar(page, cuenta) {
     const agregar = (/** @type {string} */ motivo, /** @type {number | null} */ restauradaDe) => {
@@ -264,6 +274,9 @@ export function versionesSimuladas(servidor) {
       if (r.request().method() === 'GET') return json(r, { versiones: [...versiones].reverse().map(sinTexto) });
       return json(r, sinTexto(agregar('manual', null)), 201);
     });
+    await page.route(`**/api/documentos/${DOC}/versiones/verificacion`, (r) =>
+      json(r, { integra: cadena.alteradaDesde === null, versiones: versiones.length, alteradaDesde: cadena.alteradaDesde }),
+    );
     await page.route(new RegExp(`/api/documentos/${DOC}/versiones/(\\d+)(/restaurar)?$`), (r) => {
       const m = /versiones\/(\d+)(\/restaurar)?$/.exec(r.request().url());
       const v = versiones.find((x) => x.numero === Number(m?.[1]));
@@ -278,5 +291,11 @@ export function versionesSimuladas(servidor) {
       return json(r, sinTexto(agregar('restauracion', v.numero)), 201);
     });
   }
-  return { versiones, registrar };
+  return {
+    versiones,
+    registrar,
+    alterar: (/** @type {number} */ n) => {
+      cadena.alteradaDesde = n;
+    },
+  };
 }
