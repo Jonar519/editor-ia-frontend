@@ -4,7 +4,21 @@ Interfaz web de **Cuaderno**, un editor colaborativo de documentación técnica 
 
 JavaScript sin framework + Vite, router propio por hash, Web Workers, Service Worker y CSS puro con tokens.
 
-Es el repo del tramo 2. El backend y la base están en [editor-ia-backend](https://github.com/Jonar519/editor-ia-backend) y [editor-ia-database](https://github.com/Jonar519/editor-ia-database).
+El backend y la base están en [editor-ia-backend](https://github.com/Jonar519/editor-ia-backend) y [editor-ia-database](https://github.com/Jonar519/editor-ia-database).
+
+> Visión general del proyecto y tabla "cómo demostrar cada tema": [README general](https://github.com/Jonar519/editor-ia-backend/blob/main/docs/README-general.md), en el repo del backend.
+
+## Estado
+
+Al cierre de R8 (28-10-2026), el frontend tiene completos estos bloques:
+- la identidad (H1–J);
+- el editor colaborativo: presencia, trabajo sin conexión, versiones, comentarios y vista renderizada (L–O);
+- la interfaz de la IA (Q);
+- del bloque R, la verificación de la cadena desde el historial, los textos del hero y la CSP (R1–R2).
+
+**Sin despliegue.** La CSP por cabecera, con `frame-ancestors` y un nonce, queda para el despliegue (riesgo R-06).
+
+**Pendiente:** la lista de revisión del bloque R, en [docs/revision-bloque-R.md](docs/revision-bloque-R.md), se cierra en R10.
 
 ## Requisitos
 
@@ -46,6 +60,17 @@ Abre `http://127.0.0.1:5175`. Las llamadas a `/api` van por proxy al backend en 
 
 **Sin QR para el MFA por ahora:** el secreto se escribe a mano o se abre con el enlace `otpauth://`. Dibujar un QR exige una librería o una implementación propia, que no están aprobadas.
 
+## Documentos
+
+| Ruta | Grupo | Pantalla |
+|---|---|---|
+| `#/documentos` | lector | Los espacios de la cuenta con sus documentos. Una cuenta que no es de solo lectura crea espacios y, donde es propietaria o editora, documentos. Búsqueda por significado en el espacio (bloque Q). |
+| `#/documentos/<id>` | lector | Leer en vivo, **sin CodeMirror** (solo Yjs): vista renderizada, presencia y comentarios anclados (quien lee también comenta). |
+| `#/documentos/<id>/editar` | editor | Editor colaborativo CodeMirror 6 + Yjs con cursores remotos con nombre, atajos, menú «/», paleta Ctrl+K, vista renderizada, comentarios y asistente de IA. Si el rol que manda el servidor no permite escribir, queda de solo lectura. |
+| `#/documentos/<id>/versiones` | lector | Historial: comparar dos versiones (o una con el texto actual) y verificar la cadena. Editor o propietario: además guardar una versión ahora y restaurar una anterior. |
+
+Los permisos los decide el backend. La interfaz solo oculta los botones que darían 403.
+
 ## Tu cuenta y administración
 
 Cada sección es su propia ruta (y su propio archivo, que se mide aparte). Todas las de la cuenta son del grupo lector: las abre cualquier rol.
@@ -79,6 +104,13 @@ Todos los `.bat` están en `scripts\` y se pueden ejecutar desde cualquier carpe
 | `mutar.bat [id...]` | Pruebas de mutación del catálogo `mutations\catalogo.json`. |
 | `gitleaks.bat` | Busca secretos en todo el historial. |
 | `ci.bat` | Los mismos pasos que el CI, con el código de salida de cada uno. |
+
+## Documentación
+
+| Documento | Qué tiene |
+|---|---|
+| [docs/demo-H1.md](docs/demo-H1.md), [H2](docs/demo-H2.md), [I](docs/demo-I.md), [J](docs/demo-J.md) | Pasos de demostración para cmd.exe del tramo 2. Los del editor y la IA (L–Q) van en la guía consolidada de R9. |
+| [docs/revision-bloque-R.md](docs/revision-bloque-R.md) | Textos que prometen funciones, lo que quedó sin medir, lo que exige el despliegue y lo reabrible |
 
 ## Diseño
 
@@ -219,6 +251,44 @@ Los topes viven en `presupuestos.json`:
   - el DOM se construye con `createElement` y `createTextNode`;
   - el resaltado (`src/diferidas/highlight.js`) analiza el HTML de highlight.js en un documento aparte y copia solo `<span class="hljs-…">` y texto.
   - Pruebas: batería XSS unitaria (26 cargas, y la segunda capa sola) y E2E sobre el DOM real (13 cargas que marcarían `window` si se ejecutaran), con las mutaciones O01–O04.
+
+### Editor colaborativo (bloques L–O)
+
+Decisiones en los ADR [0004](https://github.com/Jonar519/editor-ia-backend/blob/main/docs/adr/0004-motor-de-edicion.md) (motor de edición) y [0007](https://github.com/Jonar519/editor-ia-backend/blob/main/docs/adr/0007-sin-conexion.md) (sin conexión) del backend. Protocolo del WebSocket en [protocolo-tiempo-real.md](https://github.com/Jonar519/editor-ia-backend/blob/main/docs/protocolo-tiempo-real.md).
+
+- **Conexión** (`src/tiempo-real/conexion.js`):
+  - pide un ticket de un solo uso y lo manda en `Sec-WebSocket-Protocol`, nunca en la URL;
+  - sincroniza el `Y.Doc` y la presencia;
+  - reconecta según el código de cierre.
+  - El estado de red se ve siempre, con texto, en una región viva.
+- **Editor** (`src/vistas/editor/editar.js`):
+  - el Markdown es la fuente, **sin HTML embebido**;
+  - deshacer solo lo propio (el `Y.UndoManager`);
+  - Tab no atrapa el foco: sale del editor (WCAG 2.1.2), y Ctrl+] y Ctrl+[ indentan.
+- **Presencia** (`src/tiempo-real/presencia.js`):
+  - el nombre y el color de cada cursor salen de la cuenta que autenticó el **servidor**, nunca de lo que manda otro cliente;
+  - 6 colores con contraste medido, ninguno violeta.
+- **Sin conexión** (`src/tiempo-real/almacen-local.js`):
+  - quien edita guarda cada actualización en IndexedDB y el documento arranca con esa copia antes de conectar;
+  - al volver la red, el paso 2 del protocolo manda todo lo que el servidor no tiene, sin pérdidas ni duplicados (Yjs identifica cada cambio);
+  - la copia es de una sola cuenta y se borra al salir, al eliminar la cuenta, al restablecer la contraseña y al perder el acceso al documento;
+  - salir con cambios sin enviar avisa cuántos son.
+- **Versiones** (`src/vistas/lector/versiones.js`, `src/diff/`):
+  - la diferencia por líneas (Myers) corre en un Web Worker;
+  - se muestra con texto (+ / −, «Agregada» / «Quitada») y con `<ins>` / `<del>`, sin colores nuevos;
+  - «Verificar la cadena» dice «íntegra» o «alterada desde la versión N».
+- **Comentarios** (`src/comentarios/`):
+  - el tramo comentado son dos posiciones relativas de Yjs, que siguen al texto;
+  - si el tramo se borra entero, el hilo queda «sobre texto eliminado»;
+  - se puede comentar desde el editor o desde la vista renderizada (`posiciones.js` traduce la selección a la fuente);
+  - un borrador no se pierde si llega un cambio de otra persona.
+- **Comandos** (`src/vistas/editor/comandos.js`, `paleta.js`):
+  - los mismos en los atajos, en el menú «/» y en la paleta Ctrl+K, que sigue el patrón combobox de ARIA;
+  - cada comando es una edición normal: viaja por el CRDT y se deshace con Ctrl+Z.
+- **Pruebas:**
+  - E2E `editor.spec.mjs`: dos personas a la vez, sin red y salir con cambios;
+  - E2E `versiones-comentarios.spec.mjs`, `markdown.spec.mjs` y `anclaje-renderizado.spec.mjs`;
+  - mutaciones L01–L03, M01–M04, N01–N02 y O01–O08.
 
 ### Asistente de IA (bloque Q)
 
