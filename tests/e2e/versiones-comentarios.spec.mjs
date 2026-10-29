@@ -107,7 +107,9 @@ test('versiones: guardar, comparar en el Web Worker y restaurar como cambio nuev
   await abrirDocumento(historial, ANA, servidor, { vista: 'versiones', rol: 'propietario' });
   await expect(historial.getByText('Todavía no hay versiones de este documento.')).toBeVisible();
   await historial.getByRole('button', { name: 'Guardar una versión ahora' }).click();
-  await expect(historial.getByText('Guardaste la versión 1.')).toBeVisible();
+  // El aviso visible. El mismo texto llega 50 ms después al anunciador de lectores de pantalla (#anuncios):
+  // getByText encontraba uno o los dos según el momento, y con dos fallaba por el modo estricto.
+  await expect(historial.getByRole('status').filter({ hasText: 'Guardaste la versión 1.' })).toBeVisible();
 
   // Ana sigue escribiendo; la comparación (en el Web Worker) muestra lo agregado.
   await page.keyboard.type('tres\n');
@@ -121,7 +123,7 @@ test('versiones: guardar, comparar en el Web Worker y restaurar como cambio nuev
   // Restaurar la 1: confirma, el editor de Ana pasa a ese texto y queda la versión 2 que apunta a la 1.
   await historial.getByRole('button', { name: 'Restaurar' }).click();
   await historial.getByRole('button', { name: 'Sí, restaurar la 1' }).click();
-  await expect(historial.getByText('Restauraste la versión 1: quedó como la versión 2.')).toBeVisible();
+  await expect(historial.getByRole('status').filter({ hasText: 'Restauraste la versión 1: quedó como la versión 2.' })).toBeVisible();
   await expect.poll(() => texto(page)).toBe('uno\ndos\n');
   const filas = historial.locator('ol.filas .fila-titulo');
   await expect(filas).toHaveText([/^Versión 2 · Restauración de la 1 · Ana Ficticia/, /^Versión 1 · Guardada a mano · Ana Ficticia/]);
