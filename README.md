@@ -18,7 +18,11 @@ Al cierre de R8 (28-10-2026), el frontend tiene completos estos bloques:
 
 **Sin despliegue.** La CSP por cabecera, con `frame-ancestors` y un nonce, queda para el despliegue (riesgo R-06).
 
-**Pendiente:** la lista de revisión del bloque R, en [docs/revision-bloque-R.md](docs/revision-bloque-R.md), se cierra en R10.
+**Lista de revisión del bloque R** ([docs/revision-bloque-R.md](docs/revision-bloque-R.md)), al día en R10:
+- los textos del hero y la CSP están cerrados;
+- lo que quedó sin medir (Firefox con fotos reales, Safari, demo J pasos 8 y 9) sigue declarado, no medido;
+- las dependencias se revisan en R11;
+- lo que pasa al despliegue está reunido allí.
 
 ## Requisitos
 
@@ -110,7 +114,7 @@ Todos los `.bat` están en `scripts\` y se pueden ejecutar desde cualquier carpe
 | Documento | Qué tiene |
 |---|---|
 | [docs/demo-H1.md](docs/demo-H1.md), [H2](docs/demo-H2.md), [I](docs/demo-I.md), [J](docs/demo-J.md) | Pasos de demostración para cmd.exe del tramo 2. Los del editor y la IA (L–Q) van en la guía consolidada de R9. |
-| [docs/revision-bloque-R.md](docs/revision-bloque-R.md) | Textos que prometen funciones, lo que quedó sin medir, lo que exige el despliegue y lo reabrible |
+| [docs/revision-bloque-R.md](docs/revision-bloque-R.md) | Textos que prometen funciones, CSP, lo que quedó sin medir, dependencias, lo que pasa al despliegue y lo reabrible |
 
 ## Diseño
 
