@@ -1,7 +1,7 @@
 // Bloques L y M de punta a punta: dos personas editan el MISMO documento a la vez, y sin conexión. El API y
 // el WebSocket son simulados (el relevo que hace de servidor está en colaboracion.mjs). Las esperas de red
 // se registran ANTES de la acción. Datos SOLO ficticios (@example.com, nombres inventados).
-import { ANA, BETO, DOC, abrirEditor, red, relevo, segundaPersona, texto } from './colaboracion.mjs';
+import { ANA, BETO, DOC, abrirDocumento, abrirEditor, red, relevo, segundaPersona, texto } from './colaboracion.mjs';
 import { axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
@@ -209,4 +209,70 @@ test('salir con cambios sin enviar avisa cuántos; cancelar los conserva y confi
   await dialogo.getByRole('button', { name: 'Salir y borrar esos cambios' }).click();
   await expect(page).toHaveURL(/#\/$/);
   await expect.poll(bases).not.toContain('cuaderno-local');
+});
+
+// R10: cuando el servidor corta (4403) el editor queda de solo lectura: ni el teclado ni los atajos
+// cambian el texto.
+/** Escribir, un atajo de Markdown y deshacer, con el foco donde quedó: nada cambia el texto. */
+async function nadaCambia(/** @type {Page} */ page, /** @type {string} */ esperado) {
+  await page.keyboard.type('zz');
+  await page.keyboard.press('Control+b');
+  // Chromium manda el deshacer (beforeinput historyUndo) al editor aunque el foco ya no esté en él.
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Enter');
+  expect(await texto(page)).toBe(esperado);
+}
+
+test('quitan el acceso con el editor abierto: solo lectura, con aviso, y nada más sale', async ({ page }) => {
+  const servidor = relevo();
+  const acceso = { rol: /** @type {const} */ ('editor'), revocado: false };
+  const a = await abrirDocumento(page, ANA, servidor, { acceso });
+  await a.editor.click();
+  await page.keyboard.type('Antes');
+  await expect.poll(() => servidor.doc.getText('contenido').toString()).toBe('Antes');
+
+  // Como el backend: cierra con 4403 y el ticket siguiente responde 404.
+  acceso.revocado = true;
+  await a.sockets.at(-1)?.close({ code: 4403, reason: 'sin acceso' });
+  await expect(red(page)).toContainText('Ya no tienes acceso a este documento.');
+  await expect(page.getByText('El editor quedó de solo lectura: lo que escribas aquí ya no se guarda.')).toBeVisible();
+  await expect(a.editor).toHaveAttribute('contenteditable', 'false');
+  await nadaCambia(page, 'Antes');
+  // También con un clic en el editor.
+  await a.editor.click();
+  await nadaCambia(page, 'Antes');
+  expect(servidor.doc.getText('contenido').toString()).toBe('Antes');
+  expect(a.sockets).toHaveLength(1);
+  // La paleta ya no ofrece los comandos de Markdown.
+  await page.keyboard.press('Control+k');
+  const paleta = page.getByRole('dialog', { name: 'Comandos' });
+  await expect(paleta).toBeVisible();
+  await expect(paleta.getByRole('option', { name: 'Negrita' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  expect(await axeEstable(page)).toEqual([]);
+});
+
+test('el rol baja a lector con el editor abierto: solo lectura y sigue recibiendo los cambios', async ({ page }) => {
+  const servidor = relevo();
+  const acceso = { rol: /** @type {'editor' | 'lector'} */ ('editor'), revocado: false };
+  const a = await abrirDocumento(page, ANA, servidor, { acceso });
+  await a.editor.click();
+  await page.keyboard.type('Antes');
+  await expect.poll(() => servidor.doc.getText('contenido').toString()).toBe('Antes');
+
+  // Como el backend: cierra con 4403 y el ticket nuevo da una conexión con el rol de lectura.
+  acceso.rol = 'lector';
+  await a.sockets.at(-1)?.close({ code: 4403, reason: 'el permiso cambió' });
+  await expect.poll(() => a.sockets.length).toBe(2);
+  await expect(red(page)).toContainText('Conectado');
+  await expect(page.getByText('Solo puedes leer este documento: tu permiso no permite editarlo.')).toBeVisible();
+  await expect(page.getByText('El editor quedó de solo lectura')).toBeHidden();
+  await expect(a.editor).toHaveAttribute('contenteditable', 'false');
+  await nadaCambia(page, 'Antes');
+  expect(servidor.doc.getText('contenido').toString()).toBe('Antes');
+
+  // Lo que escriben otras personas sigue llegando.
+  servidor.doc.getText('contenido').insert(5, ' y después');
+  await expect.poll(() => texto(page)).toBe('Antes y después');
+  expect(await axeEstable(page)).toEqual([]);
 });
