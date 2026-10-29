@@ -19,6 +19,11 @@ test('comentarios anclados: una lectora comenta con el teclado, el ancla sigue a
     const a = await abrirDocumento(page, ANA, servidor, { rol: 'propietario' });
     await a.editor.click();
     await page.keyboard.type('Introducción al tema');
+    // Diagnóstico de una falla vista una vez en el CI (la lectura mostró «ntroducción al temaI») y no
+    // reproducida después: si vuelve, esto dice si ya el editor de Ana quedó mal (el cursor saltó al
+    // inicio tras la primera tecla) o si fue la sincronía con el servidor o la lectura.
+    await expect.poll(() => texto(page)).toBe('Introducción al tema');
+    await expect.poll(() => servidor.doc.getText('contenido').toString()).toBe('Introducción al tema');
 
     await comentarios.registrar(pageL, LUCIA, 'lector');
     await abrirDocumento(pageL, LUCIA, servidor, { vista: 'leer', rol: 'lector' });
