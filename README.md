@@ -70,7 +70,7 @@ Abre `http://127.0.0.1:5175`. Las llamadas a `/api` van por proxy al backend en 
 |---|---|---|
 | `#/documentos` | lector | Los espacios de la cuenta con sus documentos. Una cuenta que no es de solo lectura crea espacios y, donde es propietaria o editora, documentos. Búsqueda por significado en el espacio (bloque Q). |
 | `#/documentos/<id>` | lector | Leer en vivo, **sin CodeMirror** (solo Yjs): vista renderizada, presencia y comentarios anclados (quien lee también comenta). |
-| `#/documentos/<id>/editar` | editor | Editor colaborativo CodeMirror 6 + Yjs con cursores remotos con nombre, atajos, menú «/», paleta Ctrl+K, vista renderizada, comentarios y asistente de IA. Si el rol que manda el servidor no permite escribir, queda de solo lectura. |
+| `#/documentos/<id>/editar` | editor | Editor colaborativo CodeMirror 6 + Yjs con cursores remotos con nombre, atajos, menú «/», paleta Ctrl+K, vista renderizada, comentarios y asistente de IA. Si el rol que manda el servidor no permite escribir, o se pierde el acceso al documento, queda de solo lectura. |
 | `#/documentos/<id>/versiones` | lector | Historial: comparar dos versiones (o una con el texto actual) y verificar la cadena. Editor o propietario: además guardar una versión ahora y restaurar una anterior. |
 
 Los permisos los decide el backend. La interfaz solo oculta los botones que darían 403.
@@ -269,6 +269,16 @@ Decisiones en los ADR [0004](https://github.com/Jonar519/editor-ia-backend/blob/
   - el Markdown es la fuente, **sin HTML embebido**;
   - deshacer solo lo propio (el `Y.UndoManager`);
   - Tab no atrapa el foco: sale del editor (WCAG 2.1.2), y Ctrl+] y Ctrl+[ indentan.
+- **Solo lectura** (`src/vistas/editor/permiso.js`, R10). El editor queda de solo lectura, con un aviso:
+  - si el rol baja a lector durante la sesión: el servidor cierra con 4403 y el ticket nuevo trae el rol;
+  - si se pierde el acceso (4403 y el ticket da 404) o el documento se borra (4404). Esto dura hasta salir de la página.
+  - Al terminar la sesión **sigue editable**, a propósito (bloque M): lo escrito se envía al volver a entrar.
+  - No alcanza con el `readOnly` de CodeMirror. Sin permiso, además:
+    - se descarta todo cambio que no venga del documento compartido (comandos, IA, el Enter de las listas);
+    - los atajos que editan no corren;
+    - se cancela el deshacer del navegador (`historyUndo`), que Chromium manda al editor aunque ya no tenga el foco.
+  - Lo que escriben los demás sigue llegando.
+  - Lo respaldan la prueba unitaria `permiso-editor.test.mjs`, la E2E de `editor.spec.mjs` y las mutaciones R07–R16.
 - **Presencia** (`src/tiempo-real/presencia.js`):
   - el nombre y el color de cada cursor salen de la cuenta que autenticó el **servidor**, nunca de lo que manda otro cliente;
   - 6 colores con contraste medido, ninguno violeta.

@@ -121,12 +121,15 @@ export function relevo() {
 /**
  * Una persona con sesión abierta en una vista del documento.
  * @param {Page} page @param {Cuenta} cuenta @param {Relevo} servidor
- * @param {{ vista?: 'editar' | 'leer' | 'versiones', rol?: RolDocumento, conexion?: { sinRed: boolean } }} [o]
+ * @param {{ vista?: 'editar' | 'leer' | 'versiones', rol?: RolDocumento, conexion?: { sinRed: boolean }, acceso?: { rol: RolDocumento, revocado: boolean } }} [o]
  *   conexion.sinRed: el ticket falla como sin red
+ *   acceso: lo que dice el servidor en cada ticket (revocado: 404, como el backend sin acceso) y el rol
+ *     de cada conexión nueva. La prueba lo cambia y cierra el socket con 4403, como el backend (R10).
  */
 export async function abrirDocumento(page, cuenta, servidor, o = {}) {
   const rol = o.rol ?? 'editor';
   const conexion = o.conexion ?? { sinRed: false };
+  const acceso = o.acceso ?? { rol, revocado: false };
   await page.route('**/api/auth/refresco', (r) => json(r, { accessToken: `token-ficticio-${cuenta.nombre}`, expiraEn: Math.floor(Date.now() / 1000) + 900, usuario: cuenta }));
   await page.route(`**/api/documentos/${DOC}`, (r) =>
     json(r, { id: DOC, espacioId: '00000000-0000-4000-8000-0000000000e1', titulo: 'Guía de prueba', rol, propietario: { id: ANA.id, nombre: ANA.nombre }, creadoEn: '2026-01-15T12:00:00.000Z', actualizadoEn: '2026-01-15T12:00:00.000Z' }),
@@ -135,6 +138,7 @@ export async function abrirDocumento(page, cuenta, servidor, o = {}) {
   const tickets = [];
   await page.route('**/api/tiempo-real/tickets', (r) => {
     if (conexion.sinRed) return r.abort('internetdisconnected');
+    if (acceso.revocado) return r.fulfill({ status: 404, contentType: 'application/json', body: cuerpoError('documento_no_encontrado', 'Documento no encontrado') });
     tickets.push(r.request().postDataJSON());
     return json(r, { ticket: 'A'.repeat(43), expiraEnSegundos: 30 }, 201);
   });
@@ -142,7 +146,7 @@ export async function abrirDocumento(page, cuenta, servidor, o = {}) {
   const sockets = [];
   await page.routeWebSocket('**/api/tiempo-real', (ws) => {
     sockets.push(ws);
-    servidor.conectar(ws, cuenta, rol);
+    servidor.conectar(ws, cuenta, acceso.rol);
   });
   const vista = o.vista ?? 'editar';
   await page.goto(`/#/documentos/${DOC}${vista === 'leer' ? '' : `/${vista}`}`);

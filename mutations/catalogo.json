@@ -944,6 +944,96 @@
       "reemplazo": "'worker-src': [\"'none'\"],",
       "comando": "test",
       "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "R07",
+      "regla": "Solo lectura: sin acceso, el editor deja de escribir",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "export const ESTADOS_SIN_EDICION = ['sin-acceso', 'borrado'];",
+      "reemplazo": "export const ESTADOS_SIN_EDICION = ['borrado'];",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R08",
+      "regla": "Solo lectura: con el documento borrado, el editor deja de escribir",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "export const ESTADOS_SIN_EDICION = ['sin-acceso', 'borrado'];",
+      "reemplazo": "export const ESTADOS_SIN_EDICION = ['sin-acceso'];",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R09",
+      "regla": "Solo lectura: al terminar la sesión el editor sigue editable (bloque M)",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "export const ESTADOS_SIN_EDICION = ['sin-acceso', 'borrado'];",
+      "reemplazo": "export const ESTADOS_SIN_EDICION = ['sin-acceso', 'borrado', 'sesion-terminada'];",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R10",
+      "regla": "Solo lectura: el corte es para siempre (un rol que llega después no lo deshace)",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "const puede = () => !cortado && escribe(rol);",
+      "reemplazo": "const puede = () => escribe(rol);",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R11",
+      "regla": "Solo lectura: el rol que baja a lector durante la sesión se aplica al editor",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "      rol = nuevo;\n      alCambio(estado());",
+      "reemplazo": "      rol = nuevo;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R12",
+      "regla": "Solo lectura: tras el corte, la IA y los comentarios actúan como quien lee",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "rol: () => (cortado ? 'lector' : rol),",
+      "reemplazo": "rol: () => rol,",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R13",
+      "regla": "Solo lectura: sin permiso se descartan los cambios propios del editor (comandos, IA, Enter de las listas)",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "p.puede() || tr.annotation(ySyncAnnotation) !== undefined",
+      "reemplazo": "true",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R14",
+      "regla": "Solo lectura: sin permiso, lo que escriben los demás sigue llegando",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "p.puede() || tr.annotation(ySyncAnnotation) !== undefined",
+      "reemplazo": "p.puede()",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R15",
+      "regla": "Solo lectura: sin permiso, los atajos que editan (deshacer de Yjs incluido) no corren",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "(p.puede() ? run(v) : true)",
+      "reemplazo": "run(v)",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "R16",
+      "regla": "Solo lectura: sin permiso, el deshacer del navegador (historyUndo) no llega al deshacer de Yjs",
+      "archivo": "src/vistas/editor/permiso.js",
+      "buscar": "if (p.puede() || (e.inputType !== 'historyUndo' && e.inputType !== 'historyRedo')) return false;",
+      "reemplazo": "if (p.puede() || e.inputType !== 'historyRedo') return false;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
     }
   ]
 }
