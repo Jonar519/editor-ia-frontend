@@ -4,7 +4,8 @@
 //   - Tab NO se captura: sale del editor como de cualquier campo (WCAG 2.1.2). Ctrl+] y Ctrl+[ indentan
 //     (defaultKeymap), y la ayuda visible lo dice.
 //   - Cursores remotos con el nombre siempre a la vista (presencia.js decide nombre y color).
-//   - Si el rol que manda el servidor no permite escribir, el editor queda de solo lectura.
+//   - Si el rol que manda el servidor no permite escribir, o la conexión se cortó sin acceso o con el
+//     documento borrado, el editor queda de solo lectura (permiso.js).
 import { defaultKeymap } from '@codemirror/commands';
 import { deleteMarkupBackward, insertNewlineContinueMarkup, markdownLanguage } from '@codemirror/lang-markdown';
 import { LanguageSupport } from '@codemirror/language';
@@ -25,11 +26,10 @@ import { COMANDOS } from './comandos.js';
 import { menuBarraCon } from './menu-barra.js';
 import { abrirPaleta } from './paleta.js';
 import { anunciar } from '../../componentes/anunciar.js';
+import { atajosConPermiso, filtroSinPermiso, permisoEditor } from './permiso.js';
 
 const esMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const MOD = esMac ? '⌘' : 'Ctrl';
-
-const escribe = (/** @type {string} */ rol) => rol === 'editor' || rol === 'propietario';
 
 /** @param {Record<string, string>} params */
 export async function render(params) {
@@ -48,21 +48,22 @@ export async function render(params) {
   const yo = api.usuario();
   const red = indicadorRed();
   const soloLectura = h('div', { hidden: true }, aviso('advertencia', 'Solo puedes leer este documento: tu permiso no permite editarlo.'));
+  const cortado = h('div', { hidden: true }, aviso('error', 'El editor quedó de solo lectura: lo que escribas aquí ya no se guarda.'));
   const editable = new Compartment();
+  const soloLecturaSi = (/** @type {boolean} */ puede) => [EditorState.readOnly.of(!puede), EditorView.editable.of(puede)];
   // Bloque Q: el autocompletado de la IA entra aquí (vacío hasta que se activa en el panel).
   const sugerenciasIa = new Compartment();
   /** @type {EditorView | null} */
   let vista = null;
   /** @type {ReturnType<import('../../diferidas/ia.js')['panelIa']> | null} */
   let panelIa = null;
-  let rolActual = d.rol;
-  const ponerRol = (/** @type {string} */ rol) => {
-    rolActual = /** @type {typeof d.rol} */ (rol);
-    const puede = escribe(rol);
-    soloLectura.hidden = puede;
-    vista?.dispatch({ effects: editable.reconfigure([EditorState.readOnly.of(!puede), EditorView.editable.of(puede)]) });
+  const alPermiso = (/** @type {import('./permiso.js').EstadoPermiso} */ e) => {
+    soloLectura.hidden = e.puede || e.cortado;
+    cortado.hidden = !e.cortado;
+    vista?.dispatch({ effects: editable.reconfigure(soloLecturaSi(e.puede)) });
     panelIa?.porRol();
   };
+  const permiso = permisoEditor(d.rol, alPermiso);
 
   // Bloque M: si el permiso bajó a lectura mientras había cambios sin conexión, no se guardaron. Se dice.
   const rechazados = h(
@@ -73,8 +74,11 @@ export async function render(params) {
   red.poner('conectando');
   const vivo = await abrirDocumento({
     documentoId: d.id,
-    alEstado: red.poner,
-    alRol: ponerRol,
+    alEstado: (e) => {
+      red.poner(e);
+      permiso.ponerEstadoRed(e);
+    },
+    alRol: permiso.ponerRol,
     alPendiente: red.ponerPendiente,
     alCopia: red.ponerCopia,
     alRechazados: () => {
@@ -149,7 +153,7 @@ export async function render(params) {
       }
       panelIa ??= m.panelIa({
         documentoId: d.id,
-        rol: () => rolActual,
+        rol: permiso.rol,
         texto: () => v.state.doc.toString(),
         seleccion: () => {
           const s = v.state.selection.main;
@@ -158,13 +162,13 @@ export async function render(params) {
         aplicar: {
           // Como una transacción normal del editor: viaja por el CRDT con la autoría de quien acepta.
           reemplazar: (s, nuevo) => {
-            if (!escribe(rolActual) || v.state.sliceDoc(s.desde, s.hasta) !== s.texto) return false;
+            if (!permiso.puede() || v.state.sliceDoc(s.desde, s.hasta) !== s.texto) return false;
             v.dispatch({ changes: { from: s.desde, to: s.hasta, insert: nuevo }, selection: { anchor: s.desde, head: s.desde + nuevo.length }, userEvent: 'input.ia' });
             v.focus();
             return true;
           },
           insertarDebajo: (s, nuevo) => {
-            if (!escribe(rolActual)) return;
+            if (!permiso.puede()) return;
             const fin = v.state.doc.lineAt(Math.min(s.hasta, v.state.doc.length)).to;
             v.dispatch({ changes: { from: fin, insert: `\n\n${nuevo}` }, selection: { anchor: fin + 2, head: fin + 2 + nuevo.length }, userEvent: 'input.ia' });
             v.focus();
@@ -204,7 +208,7 @@ export async function render(params) {
     { id: 'ia-abrir', nombre: 'Abrir el asistente de IA', palabras: 'ia asistente inteligencia artificial', aplicar: () => void conIa((p) => p.abrir()) },
     { id: 'ia-explicar', nombre: 'Explicar la selección con la IA', palabras: 'ia explicar explicacion', aplicar: () => void conIa((p) => p.explicar()) },
     { id: 'ia-resumir', nombre: 'Resumir el documento con la IA', palabras: 'ia resumir resumen', aplicar: () => void conIa((p) => p.resumir()) },
-    ...(escribe(rolActual)
+    ...(permiso.puede()
       ? /** @type {const} */ (['claro', 'breve', 'formal']).map((e) => ({
           id: `ia-mejorar-${e}`,
           nombre: `Mejorar la selección con la IA (${e})`,
@@ -220,7 +224,7 @@ export async function render(params) {
     if (!v) return true;
     abrirPaleta({
       acciones: [
-        ...COMANDOS.filter(() => escribe(rolActual)).map((c) => ({ ...c, aplicar: () => void c.aplicar(v) })),
+        ...COMANDOS.filter(() => permiso.puede()).map((c) => ({ ...c, aplicar: () => void c.aplicar(v) })),
         ...accionesIa(),
         { id: 'previa', nombre: 'Vista previa (mostrar u ocultar)', palabras: 'vista previa renderizada', aplicar: () => mostrarPrevia(botonPrevia.getAttribute('aria-pressed') !== 'true') },
         { id: 'historial', nombre: 'Historial de versiones', palabras: 'historial versiones restaurar', aplicar: () => { location.hash = `#/documentos/${encodeURIComponent(d.id)}/versiones`; } },
@@ -245,22 +249,27 @@ export async function render(params) {
       doc: vivo.texto.toString(),
       extensions: [
         keymap.of([
-          ...yUndoManagerKeymap,
-          // Atajos de Markdown (antes que los de CodeMirror: Mod-i allí selecciona el nodo padre).
-          ...COMANDOS.filter((c) => c.atajo).map((c) => ({ key: c.atajo, run: c.aplicar })),
+          ...atajosConPermiso(permiso, [
+            ...yUndoManagerKeymap,
+            // Atajos de Markdown (antes que los de CodeMirror: Mod-i allí selecciona el nodo padre).
+            ...COMANDOS.filter((c) => c.atajo).map((c) => ({ key: c.atajo, run: c.aplicar })),
+          ]),
           { key: 'Mod-k', run: abrirLaPaleta },
           // Enter continúa la lista o la cita; Retroceso quita la marca (de lang-markdown, sin HTML).
-          { key: 'Enter', run: insertNewlineContinueMarkup },
-          { key: 'Backspace', run: deleteMarkupBackward },
+          ...atajosConPermiso(permiso, [
+            { key: 'Enter', run: insertNewlineContinueMarkup },
+            { key: 'Backspace', run: deleteMarkupBackward },
+          ]),
           ...defaultKeymap,
         ]),
+        filtroSinPermiso(permiso),
         // Al principio de una línea no hay selección: del "/" solo abrir el asistente y resumir.
         menuBarraCon(() => accionesIa().filter((a) => a.id === 'ia-abrir' || a.id === 'ia-resumir')),
         sugerenciasIa.of([]),
         new LanguageSupport(markdownLanguage),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': `Contenido de ${d.titulo}`, 'aria-describedby': 'ayuda-editor', 'aria-multiline': 'true' }),
-        editable.of([EditorState.readOnly.of(!escribe(d.rol)), EditorView.editable.of(escribe(d.rol))]),
+        editable.of(soloLecturaSi(permiso.puede())),
         yCollab(vivo.texto, vivo.presencia, { undoManager: new Y.UndoManager(vivo.texto) }),
         // Bloque N: las marcas de los comentarios, y la selección para comentarla.
         marcasComentarios,
@@ -270,7 +279,7 @@ export async function render(params) {
       ],
     }),
   });
-  soloLectura.hidden = escribe(d.rol);
+  alPermiso(permiso.estado());
 
   if (yo) {
     const v = vista;
@@ -278,7 +287,7 @@ export async function render(params) {
       documentoId: d.id,
       vivo,
       yo,
-      rol: () => rolActual,
+      rol: permiso.rol,
       seleccion: () => {
         const s = v.state.selection.main;
         return s.empty ? null : { inicio: s.from, fin: s.to };
@@ -299,7 +308,7 @@ export async function render(params) {
     vista?.destroy();
   });
 
-  pagina.append(red.el, rechazados, soloLectura);
+  pagina.append(red.el, rechazados, cortado, soloLectura);
   if (yo) pagina.append(quienEsta(vivo.presencia, yo));
   pagina.append(
     h('p', { class: 'enlaces-documento' }, h('a', { href: `#/documentos/${encodeURIComponent(d.id)}` }, 'Ver sin editar'), ' · ', h('a', { href: `#/documentos/${encodeURIComponent(d.id)}/versiones` }, 'Historial de versiones')),
