@@ -33,6 +33,10 @@ describe('estrategia del Service Worker', () => {
     expect(pedir('/assets/a.js', 'POST')).toBe('ignorar');
     // Aunque la ruta parezca de /assets: si es de otro origen, no se toca.
     expect(estrategia({ url: 'https://cdn.example.com/assets/x.js', metodo: 'GET', modo: 'cors', origen: ORIGEN })).toBe('ignorar');
+    // El API en SU origen (despliegue: api-cuaderno.<dominio>): nada de él pasa por la caché, ni los GET.
+    for (const ruta of ['/api/cuenta', '/api/usuarios/1/avatar', '/api/documentos/d/versiones', '/assets/x.js']) {
+      expect(estrategia({ url: `https://api-cuaderno.example.com${ruta}`, metodo: 'GET', modo: 'cors', origen: ORIGEN }), ruta).toBe('ignorar');
+    }
   });
 
   it('la caché de /assets ignora Vary (el servidor manda "Vary: Origin" y los módulos mandan Origin)', () => {
