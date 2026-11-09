@@ -6,7 +6,7 @@
 // nombres salen del manifiesto de Vite (dist/.vite/manifest.json), no de patrones adivinados.
 import { readFileSync } from 'node:fs';
 import { ANA, DOC, LUCIA, abrirDocumento, abrirEditor, json, relevo, texto } from './colaboracion.mjs';
-import { axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
+import { EXPONER, axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {import('@playwright/test').Route} Route */
@@ -198,7 +198,7 @@ test('el tope diario (429) se muestra como error, con la hora en que se renueva'
   const a = await abrirEditor(page, ANA, servidor);
   await escribirYSeleccionar(page, a.editor, 'Algo que explicar.');
   await page.route('**/api/ia/explicar', (r) =>
-    r.fulfill({ status: 429, contentType: 'application/json', headers: { 'retry-after': '3600' }, body: cuerpoError('tope_diario_ia', 'Tope diario') }),
+    r.fulfill({ status: 429, contentType: 'application/json', headers: { ...EXPONER, 'retry-after': '3600' }, body: cuerpoError('tope_diario_ia', 'Tope diario') }),
   );
   await page.getByRole('button', { name: 'IA', exact: true }).click();
   const pedido = page.waitForResponse('**/api/ia/explicar');

@@ -7,6 +7,13 @@ import { expect, test as base } from '@playwright/test';
 
 export { expect };
 
+/**
+ * El API está en OTRO origen (VITE_API_URL del build: http://127.0.0.1:4200): el navegador solo deja leer
+ * Retry-After y Content-Disposition si la respuesta las expone, como hace el CORS del backend
+ * (src/http/cors.ts). Playwright responde el preflight solo; esto va en las respuestas que las leen.
+ */
+export const EXPONER = { 'access-control-expose-headers': 'retry-after, content-disposition, x-request-id' };
+
 /** @param {string} codigo @param {string} mensaje */
 export const cuerpoError = (codigo, mensaje) => JSON.stringify({ error: { codigo, mensaje, solicitud: 'prueba' } });
 

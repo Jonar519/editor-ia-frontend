@@ -3,8 +3,11 @@
 // y que el colector de violaciones lo ve. Usa el `test` de Playwright, no el de la fixture: aquí la
 // violación es a propósito.
 import { expect, test } from '@playwright/test';
-import { CSP } from '../../scripts/lib/csp.mjs';
+import { origenApiDelBuild, politica } from '../../scripts/lib/csp.mjs';
 import { cuerpoError, vigilarCsp } from './fixtures.mjs';
+
+/** La política con el mismo VITE_API_URL con que se construyó lo que se prueba (scripts/e2e-linux.sh). */
+const CSP = politica(origenApiDelBuild(process.env.VITE_API_URL));
 
 test('el build sirve la CSP, bloquea un script en línea y el colector de violaciones lo registra', async ({ page }) => {
   await page.route('**/api/**', (r) => r.fulfill({ status: 401, contentType: 'application/json', body: cuerpoError('sin_refresco', 'Inicia sesión de nuevo') }));
