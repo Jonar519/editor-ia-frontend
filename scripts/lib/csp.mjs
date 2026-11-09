@@ -12,9 +12,12 @@
 //     despliegue: nonce por respuesta desde el servidor (EditorView.cspNonce) y frame-ancestors por cabecera.
 //   - worker-src 'self': la comparación de versiones corre en un Web Worker propio; el Service Worker
 //     también es propio.
+//   - connect-src: 'self' y SOLO el origen del API (VITE_API_URL), en https y en wss (http y ws en local).
+//     El frontend y el API están en orígenes distintos del mismo sitio (despliegue).
+import { normalizarOrigenApi, origenWebSocket } from '../../src/api/origen.js';
 
-/** @type {Record<string, string[]>} */
-export const DIRECTIVAS = {
+/** Las directivas fijas, antes y después de connect-src (que depende del origen del API). */
+const ANTES = {
   'default-src': ["'self'"],
   'script-src': ["'self'"],
   'style-src': ["'self'"],
@@ -22,7 +25,8 @@ export const DIRECTIVAS = {
   'style-src-attr': ["'unsafe-inline'"],
   'img-src': ["'self'", 'data:', 'blob:'],
   'font-src': ["'self'"],
-  'connect-src': ["'self'"],
+};
+const DESPUES = {
   'worker-src': ["'self'"],
   'manifest-src': ["'self'"],
   'object-src': ["'none'"],
@@ -30,7 +34,31 @@ export const DIRECTIVAS = {
   'form-action': ["'self'"],
 };
 
-/** La política como texto, para la <meta>. */
-export const CSP = Object.entries(DIRECTIVAS)
-  .map(([nombre, fuentes]) => `${nombre} ${fuentes.join(' ')}`)
-  .join('; ');
+/**
+ * Las directivas de la política para un origen de API.
+ * @param {string} origenApi
+ * @returns {Record<string, string[]>}
+ */
+export const directivas = (origenApi) => ({ ...ANTES, 'connect-src': ["'self'", origenApi, origenWebSocket(origenApi)], ...DESPUES });
+
+/**
+ * La política como texto, para la <meta>.
+ * @param {string} origenApi
+ */
+export const politica = (origenApi) =>
+  Object.entries(directivas(origenApi))
+    .map(([nombre, fuentes]) => `${nombre} ${fuentes.join(' ')}`)
+    .join('; ');
+
+/**
+ * El origen del API para el build. En Vercel (VERCEL=1) es OBLIGATORIO y https: un build de producción sin
+ * VITE_API_URL apuntaría en silencio al backend de desarrollo.
+ * @param {string | undefined} valor
+ * @param {{ enVercel?: boolean }} [o]
+ */
+export function origenApiDelBuild(valor, o = {}) {
+  if (o.enVercel && !valor) throw new Error('Falta VITE_API_URL en las variables de entorno de Vercel');
+  const origen = normalizarOrigenApi(valor);
+  if (o.enVercel && !origen.startsWith('https://')) throw new Error(`VITE_API_URL debe ser https en Vercel: ${origen}`);
+  return origen;
+}
