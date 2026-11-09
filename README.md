@@ -109,6 +109,14 @@ Todos los `.bat` están en `scripts\` y se pueden ejecutar desde cualquier carpe
 | `gitleaks.bat` | Busca secretos en todo el historial. |
 | `ci.bat` | Los mismos pasos que el CI, con el código de salida de cada uno. |
 
+## Despliegue (Vercel)
+
+[`vercel.json`](vercel.json): `npm ci` + `npm run build`, salida `dist`. El router es por hash: sin rewrites. Lo sujetan `tests/unitarias/vercel.test.mjs` y las mutaciones V01–V04.
+
+- Cabeceras en toda respuesta: `Content-Security-Policy: frame-ancestors 'none'` (en `<meta>` no funciona; la política completa sigue en el `<meta>` del build), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, HSTS, COOP `same-origin` y `Permissions-Policy` sin cámara, micrófono ni ubicación.
+- Caché: `/assets/*` inmutable por un año; `/`, `index.html` y `sw.js` con `no-cache`.
+- Ninguna URL ni secreto en el repo: `VITE_API_URL` se define en el proyecto de Vercel (el build falla si falta o no es `https`).
+
 ## Documentación
 
 | Documento | Qué tiene |
