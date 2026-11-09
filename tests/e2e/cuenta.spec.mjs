@@ -3,7 +3,7 @@
 // el panel de administración. Las esperas de red y de descarga se registran ANTES de la acción.
 // Datos SOLO ficticios (@example.com, nombres inventados).
 import { crc32, deflateSync } from 'node:zlib';
-import { axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
+import { EXPONER, axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {import('@playwright/test').Route} Route */
@@ -462,7 +462,7 @@ test.describe('exportar y eliminar la cuenta', () => {
   test('exportar: pide la contraseña y descarga el JSON con el nombre del servidor', async ({ page }) => {
     await conSesion(page, 'lector');
     const exportacion = await api(page, '/cuenta/exportacion', (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', headers: { 'content-disposition': 'attachment; filename="cuaderno-datos-2026-10-17.json"' }, body: '{"formato":"cuaderno-exportacion/v1"}' }),
+      r.fulfill({ status: 200, contentType: 'application/json', headers: { ...EXPONER, 'content-disposition': 'attachment; filename="cuaderno-datos-2026-10-17.json"' }, body: '{"formato":"cuaderno-exportacion/v1"}' }),
     );
     await page.goto('/#/cuenta/datos');
     await page.getByLabel('Tu contraseña').first().fill('una frase larga de prueba');

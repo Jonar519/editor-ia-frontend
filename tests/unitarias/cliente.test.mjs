@@ -4,7 +4,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CERROJO_REFRESCO, crearClienteApi, nombreDeArchivo } from '../../src/api/cliente.js';
+import { BASE_API, ORIGEN_API, URL_TIEMPO_REAL } from '../../src/api/base.js';
 import { ErrorApi, mensajeParaPersona } from '../../src/api/errores.js';
+import { origenWebSocket } from '../../src/api/origen.js';
 
 const AHORA = 1_800_000_000_000;
 const USUARIO = { id: 'u1', nombre: 'Persona Ficticia', correo: 'ana@example.com', rol: /** @type {const} */ ('lector') };
@@ -41,7 +43,7 @@ function falso(responder) {
 const nuevo = (/** @type {typeof fetch} */ f, extra = {}) => crearClienteApi({ fetch: f, ahora: () => AHORA, cerrojos: null, ...extra });
 
 describe('token solo en memoria y cabeceras', () => {
-  it('con sesión manda Authorization; sinSesion no; siempre same-origin y no-store; cuerpo JSON', async () => {
+  it('con sesión manda Authorization; sinSesion no; siempre include (API en otro origen) y no-store; cuerpo JSON', async () => {
     const { f, llamadas } = falso(() => resp({ ok: true }));
     const api = nuevo(f);
     api.establecerSesion(sesion('tok-A'));
@@ -51,7 +53,32 @@ describe('token solo en memoria y cabeceras', () => {
     expect(llamadas[1]?.cabeceras.authorization).toBeUndefined();
     expect(llamadas[1]?.cabeceras['content-type']).toBe('application/json');
     expect(llamadas[1]?.cuerpo).toBe('{"token":"t"}');
-    for (const l of llamadas) expect([l.init.credentials, l.init.cache]).toEqual(['same-origin', 'no-store']);
+    for (const l of llamadas) expect([l.init.credentials, l.init.cache]).toEqual(['include', 'no-store']);
+  });
+
+  it('por defecto las URLs son ABSOLUTAS hacia el origen del API (VITE_API_URL), nunca relativas a la página', async () => {
+    const { f, llamadas } = falso(() => resp({ ok: true }));
+    const api = nuevo(f);
+    api.establecerSesion(sesion('tok-A'));
+    await api.solicitar('/cuenta');
+    expect(llamadas[0]?.url).toBe(`${BASE_API}/cuenta`);
+    expect(BASE_API).toBe(`${ORIGEN_API}/api`);
+    expect(new URL(BASE_API).origin).toBe(ORIGEN_API);
+  });
+
+  it('el WebSocket del tiempo real sale del origen del API (ws/wss), no de location.host', () => {
+    expect(URL_TIEMPO_REAL).toBe(`${origenWebSocket(ORIGEN_API)}/api/tiempo-real`);
+    expect(URL_TIEMPO_REAL).not.toContain(globalThis.location?.host ?? '\u0000');
+  });
+
+  it('ningún archivo de src arma URLs con location.host', () => {
+    const archivos = readdirSync('src', { recursive: true }).map(String).filter((a) => a.endsWith('.js'));
+    const codigo = (/** @type {string} */ a) =>
+      readFileSync(path.join('src', a), 'utf8')
+        .split('\n')
+        .filter((l) => !/^\s*(\/\/|\*|\/\*\*)/.test(l))
+        .join('\n');
+    expect(archivos.filter((a) => /location\.host\b/.test(codigo(a)))).toEqual([]);
   });
 
   it('el token no se expone: usuario() devuelve la cuenta, nunca el token', () => {
@@ -151,7 +178,7 @@ describe('refresco', () => {
     const api = nuevo(f);
     api.establecerSesion(sesion('tok-A'));
     await expect(api.solicitar('/cuenta')).resolves.toEqual({ nombre: 'Ana' });
-    expect(llamadas.map((l) => l.url)).toEqual(['/api/cuenta', '/api/auth/refresco', '/api/cuenta']);
+    expect(llamadas.map((l) => l.url)).toEqual(['/cuenta', '/auth/refresco', '/cuenta'].map((r) => `${BASE_API}${r}`));
   });
 
   it('si después de refrescar vuelve a dar 401, NO hay bucle: se olvida la sesión y se informa', async () => {
@@ -217,7 +244,7 @@ describe('refresco', () => {
     const api = nuevo(f);
     api.establecerSesion(sesion('tok-A', AHORA / 1000 + 20));
     await api.solicitar('/cuenta');
-    expect(llamadas.map((l) => l.url)).toEqual(['/api/auth/refresco', '/api/cuenta']);
+    expect(llamadas.map((l) => l.url)).toEqual(['/auth/refresco', '/cuenta'].map((r) => `${BASE_API}${r}`));
     expect(llamadas[1]?.cabeceras.authorization).toBe('Bearer tok-B');
   });
 

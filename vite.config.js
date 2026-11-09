@@ -1,23 +1,17 @@
-// Vite: servidor de desarrollo y vista previa en 127.0.0.1:5175 (solo local). El API va por proxy en el
-// mismo origen (/api → 127.0.0.1:4200): así la cookie de refresco, SameSite=Strict y con Path=/api/auth,
-// viaja sin CORS.
+// Vite: servidor de desarrollo y vista previa en 127.0.0.1:5175 (solo local). Sin proxy: el frontend habla
+// con el API en SU origen (VITE_API_URL), igual que en producción (cuaderno.<dominio> → api-cuaderno.<dominio>).
+// Por defecto, el backend de desarrollo en http://127.0.0.1:4200: mismo sitio que 127.0.0.1:5175, así que
+// la cookie de refresco (SameSite=Strict, Path=/api/auth) viaja con credentials "include" y el CORS del
+// backend (APP_URL=http://127.0.0.1:5175).
 import { readFileSync } from 'node:fs';
-import { defineConfig } from 'vite';
-import { CSP } from './scripts/lib/csp.mjs';
+import { defineConfig, loadEnv } from 'vite';
+import { origenApiDelBuild, politica } from './scripts/lib/csp.mjs';
 import { listaPrecache, versionDe } from './scripts/sw-precache.mjs';
-
-// CUADERNO_API (opcional): otro backend local para pruebas manuales, por ejemplo uno contra la base de
-// PRUEBAS en el puerto 4201. Por defecto, el de desarrollo. Solo se acepta 127.0.0.1 (nunca un servidor
-// remoto: la cookie de refresco viajaría a otro lado).
-const api = process.env.CUADERNO_API ?? 'http://127.0.0.1:4200';
-if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(api)) throw new Error('CUADERNO_API debe ser http://127.0.0.1:<puerto>');
 
 const servidor = {
   host: '127.0.0.1',
   port: 5175,
   strictPort: true,
-  // ws: también el WebSocket de /api/tiempo-real (bloque L), en el mismo origen.
-  proxy: { '/api': { target: api, changeOrigin: false, ws: true } },
 };
 
 /**
@@ -60,18 +54,19 @@ function serviceWorker() {
  * en línea. frame-ancestors no funciona en <meta>: va en la cabecera del despliegue.
  * @returns {import('vite').Plugin}
  */
-function politicaDeContenido() {
+/** @param {string} csp */
+function politicaDeContenido(csp) {
   return {
     name: 'cuaderno-csp',
     apply: 'build',
-    transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: CSP }, injectTo: 'head-prepend' }],
+    transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: csp }, injectTo: 'head-prepend' }],
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: servidor,
   preview: servidor,
-  plugins: [serviceWorker(), politicaDeContenido()],
+  plugins: [serviceWorker(), politicaDeContenido(politica(origenApiDelBuild(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_URL, { enVercel: process.env.VERCEL === '1' })))],
   build: {
     // El manifiesto dice qué archivo sale de cada módulo: scripts/presupuestos.mjs lo usa para medir el
     // JS de primera carga y el de cada rol.
@@ -82,4 +77,4 @@ export default defineConfig({
     assetsInlineLimit: (archivo) => (/\.(woff2?|ttf|otf|eot)$/i.test(archivo) ? false : undefined),
     sourcemap: false,
   },
-});
+}));

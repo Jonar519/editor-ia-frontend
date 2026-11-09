@@ -18,6 +18,7 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from 'y-protocols/awareness';
 import * as Y from 'yjs';
+import { URL_TIEMPO_REAL } from '../api/base.js';
 import { ErrorApi } from '../api/errores.js';
 
 const MENSAJE = { sync: 0, presencia: 1, control: 2 };
@@ -76,7 +77,8 @@ export function adelantado(doc, vectorServidor) {
  * }} o
  */
 export function conectarDocumento(o) {
-  const url = o.url ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/tiempo-real`;
+  // wss://<origen de VITE_API_URL>/api/tiempo-real: nunca location.host (el API está en otro origen).
+  const url = o.url ?? URL_TIEMPO_REAL;
   const Ws = o.WebSocket ?? WebSocket;
   const w = o.ventana ?? window;
   const espera = o.espera ?? ((n) => esperaReconexion(n));

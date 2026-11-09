@@ -2,7 +2,7 @@
 // recuperación, completar invitación (admin con MFA y códigos de respaldo) y confirmar cambio de correo.
 // El token de un enlace se comprueba DENTRO del manejador de cada petición: cuando la petición sale, la
 // URL de la página ya no lo tiene. Las esperas de red se registran ANTES de la acción.
-import { axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
+import { EXPONER, axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
 
 const TOKEN = 'TokenFicticioDePruebaParaElBloqueI_0123456789'.slice(0, 43);
 const USUARIO = { id: '00000000-0000-4000-8000-000000000002', nombre: 'Rosa Ficticia', correo: 'rosa@example.com', rol: 'admin' };
@@ -98,7 +98,7 @@ test.describe('entrar', () => {
   });
 
   test('cuenta bloqueada (429): dice cuánto esperar', async ({ page }) => {
-    await api(page, '/auth/sesion', (r) => json(r, JSON.parse(cuerpoError('cuenta_bloqueada', 'Demasiados intentos fallidos. Espera antes de volver a intentar.')), 429, { 'retry-after': '60' }));
+    await api(page, '/auth/sesion', (r) => json(r, JSON.parse(cuerpoError('cuenta_bloqueada', 'Demasiados intentos fallidos. Espera antes de volver a intentar.')), 429, { ...EXPONER, 'retry-after': '60' }));
     await page.goto('/#/entrar');
     await llenarEntrar(page);
     await expect(page.getByRole('alert')).toContainText('Puedes volver a intentar en 60 s.');

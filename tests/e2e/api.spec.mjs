@@ -1,7 +1,7 @@
 // Cliente del API y componentes de estado de punta a punta, con el API SIMULADO (page.route): sesión
 // recuperada con la cookie, token solo en memoria, "Reintentar" que repite la petición sin recargar,
 // límites (429) y fin de sesión. Cada espera de red se registra ANTES de la acción que la dispara.
-import { axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
+import { EXPONER, axeEstable, cuerpoError, expect, test } from './fixtures.mjs';
 
 const TOKEN = 'token-de-prueba-que-no-debe-guardarse';
 const SESION = {
@@ -87,7 +87,7 @@ test('sin red: el mensaje lo dice con claridad', async ({ page }) => {
 test('límite de intentos (429 con Retry-After): dice cuánto esperar', async ({ page }) => {
   await conSesion(page);
   await page.route('**/api/cuenta', (r) =>
-    r.fulfill({ status: 429, contentType: 'application/json', headers: { 'retry-after': '30' }, body: cuerpoError('limite', 'Demasiadas solicitudes.') }),
+    r.fulfill({ status: 429, contentType: 'application/json', headers: { ...EXPONER, 'retry-after': '30' }, body: cuerpoError('limite', 'Demasiadas solicitudes.') }),
   );
   await page.goto('/#/cuenta');
   await expect(page.getByRole('alert')).toContainText('Demasiadas solicitudes. Puedes volver a intentar en 30 s.');

@@ -1034,6 +1034,87 @@
       "reemplazo": "if (p.puede() || e.inputType !== 'historyRedo') return false;",
       "comando": "test",
       "pruebas": ["tests/unitarias/permiso-editor.test.mjs"]
+    },
+    {
+      "id": "S01",
+      "regla": "API en otro origen: las peticiones van con credentials include (si no, la cookie de refresco no viaja)",
+      "archivo": "src/api/cliente.js",
+      "buscar": "credentials: 'include'",
+      "reemplazo": "credentials: 'same-origin'",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "S02",
+      "regla": "API en otro origen: la base es la URL absoluta de VITE_API_URL, no la ruta relativa /api",
+      "archivo": "src/api/cliente.js",
+      "buscar": "const base = o.base ?? BASE_API;",
+      "reemplazo": "const base = o.base ?? '/api';",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "S03",
+      "regla": "API en otro origen: el WebSocket del tiempo real no se arma con location.host",
+      "archivo": "src/tiempo-real/conexion.js",
+      "buscar": "const url = o.url ?? URL_TIEMPO_REAL;",
+      "reemplazo": "const url = o.url ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/tiempo-real`;",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "S04",
+      "regla": "API en otro origen: https → wss (el WebSocket nunca va sin TLS en producción)",
+      "archivo": "src/api/origen.js",
+      "buscar": "url.protocol === 'https:' ? 'wss:' : 'ws:'",
+      "reemplazo": "'ws:'",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs", "tests/unitarias/cliente.test.mjs"]
+    },
+    {
+      "id": "S05",
+      "regla": "CSP: connect-src incluye el origen del API (si no, el navegador bloquea toda llamada)",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "'connect-src': [\"'self'\", origenApi, origenWebSocket(origenApi)]",
+      "reemplazo": "'connect-src': [\"'self'\"]",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "S06",
+      "regla": "CSP: connect-src es SOLO el origen del API, no cualquier https/wss",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "'connect-src': [\"'self'\", origenApi, origenWebSocket(origenApi)]",
+      "reemplazo": "'connect-src': [\"'self'\", 'https:', 'wss:']",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "S07",
+      "regla": "Vercel: un build sin VITE_API_URL falla (apuntaría en silencio al backend local)",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "if (o.enVercel && !valor) throw",
+      "reemplazo": "if (false) throw",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "S08",
+      "regla": "Vercel: VITE_API_URL tiene que ser https",
+      "archivo": "scripts/lib/csp.mjs",
+      "buscar": "if (o.enVercel && !origen.startsWith('https://')) throw",
+      "reemplazo": "if (false) throw",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
+    },
+    {
+      "id": "S09",
+      "regla": "VITE_API_URL es solo un origen: con ruta se rechaza (las rutas /api/… quedarían duplicadas)",
+      "archivo": "src/api/origen.js",
+      "buscar": "if (url.pathname !== '/' || url.search",
+      "reemplazo": "if (url.search",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/csp.test.mjs"]
     }
   ]
 }

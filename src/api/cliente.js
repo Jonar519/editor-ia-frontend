@@ -1,4 +1,6 @@
 // Cliente del API. Reglas (ADR 0001 del backend):
+//   - El API está en OTRO origen del mismo sitio (VITE_API_URL, api/base.js): URLs absolutas y
+//     credentials "include", para que la cookie de refresco (SameSite=Strict) viaje.
 //   - El access token vive SOLO en memoria (esta clausura). Nunca en localStorage, sessionStorage,
 //     IndexedDB ni cookies accesibles por JavaScript. Recargar la página lo pierde a propósito: se pide
 //     otro con la cookie de refresco (httpOnly, SameSite=Strict, Path=/api/auth), que JS no puede leer.
@@ -7,6 +9,7 @@
 //     cerrojo de Web Locks ("cuaderno-refresco").
 //   - Un 401 "no_autenticado" refresca y reintenta UNA vez. Si el refresco falla, la sesión se olvida.
 //   - Se refresca antes de que venza (30 s de margen) para no gastar una petición en un 401.
+import { BASE_API } from './base.js';
 import { ErrorApi } from './errores.js';
 
 /** Margen para refrescar antes de que venza el access token. */
@@ -43,7 +46,8 @@ export function nombreDeArchivo(cabecera) {
  */
 export function crearClienteApi(o = {}) {
   const pedir = o.fetch ?? globalThis.fetch.bind(globalThis);
-  const base = o.base ?? '/api';
+  // Por defecto, el API de este build (VITE_API_URL): URL absoluta, nunca relativa a la página.
+  const base = o.base ?? BASE_API;
   const ahora = o.ahora ?? (() => Date.now());
   const cerrojos = o.cerrojos === undefined ? (globalThis.navigator?.locks ?? null) : o.cerrojos;
   const tiempoMaximo = o.tiempoMaximoMs ?? TIEMPO_MAXIMO_MS;
@@ -94,7 +98,8 @@ export function crearClienteApi(o = {}) {
     const limite = AbortSignal.timeout(maximoMs);
     const senales = senal ? AbortSignal.any([senal, limite]) : limite;
     try {
-      return await pedir(`${base}${ruta}`, { ...init, credentials: 'same-origin', cache: 'no-store', signal: senales });
+      // "include": el API está en OTRO origen del mismo sitio; sin esto la cookie de refresco no viaja.
+      return await pedir(`${base}${ruta}`, { ...init, credentials: 'include', cache: 'no-store', signal: senales });
     } catch (err) {
       if (senal?.aborted) throw err; // la canceló quien la pidió (por ejemplo, al cambiar de vista)
       if (limite.aborted) throw new ErrorApi({ estado: 0, codigo: 'tiempo_agotado', mensaje: 'El servidor tardó demasiado en responder.' });
