@@ -1,6 +1,42 @@
 {
   "mutaciones": [
     {
+      "id": "V01",
+      "regla": "Vercel: frame-ancestors 'none' como cabecera (clickjacking; en <meta> no funciona)",
+      "archivo": "vercel.json",
+      "buscar": "{ \"key\": \"Content-Security-Policy\", \"value\": \"frame-ancestors 'none'\" },",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/vercel.test.mjs"]
+    },
+    {
+      "id": "V02",
+      "regla": "Vercel: el Service Worker se revalida siempre (si no, los clientes quedan pegados a un build viejo)",
+      "archivo": "vercel.json",
+      "buscar": "|sw\\\\.js)",
+      "reemplazo": ")",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/vercel.test.mjs"]
+    },
+    {
+      "id": "V03",
+      "regla": "Vercel: los assets con hash son inmutables por un año",
+      "archivo": "vercel.json",
+      "buscar": "public, max-age=31536000, immutable",
+      "reemplazo": "public, max-age=3600",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/vercel.test.mjs"]
+    },
+    {
+      "id": "V04",
+      "regla": "Vercel: HSTS en toda respuesta",
+      "archivo": "vercel.json",
+      "buscar": "        { \"key\": \"Strict-Transport-Security\", \"value\": \"max-age=63072000; includeSubDomains\" },\n",
+      "reemplazo": "",
+      "comando": "test",
+      "pruebas": ["tests/unitarias/vercel.test.mjs"]
+    },
+    {
       "id": "H01",
       "regla": "Contraste: la luminancia usa la curva sRGB (no lineal)",
       "archivo": "scripts/lib/contraste.mjs",
