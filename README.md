@@ -37,16 +37,16 @@ npm ci
 scripts\dev.bat
 ```
 
-Abre `http://127.0.0.1:5175`. Las llamadas a `/api` van por proxy al backend en `127.0.0.1:4200`: mismo origen, así que la cookie de refresco (SameSite=Strict) viaja sin CORS. El backend no usa CORS.
+Abre `http://127.0.0.1:5175`. El frontend habla con el API en **su propio origen**, sin proxy, igual que en producción (`cuaderno.<dominio>` → `api-cuaderno.<dominio>`): por defecto `http://127.0.0.1:4200` ([src/api/origen.js](src/api/origen.js)). Los dos orígenes son del mismo sitio, así que la cookie de refresco (SameSite=Strict) viaja con `credentials: 'include'`, y el backend responde con CORS solo al origen de su `APP_URL`. El WebSocket del tiempo real sale del mismo origen (`ws://127.0.0.1:4200/api/tiempo-real`; `wss://` en producción), nunca de `location.host`.
 
 **Valores del backend que el inicio de sesión necesita en desarrollo** (en su `.env`; ninguno es secreto). Están comprobados en Chrome 152 contra un backend real con la base de **pruebas**:
 
 | Variable | Valor en desarrollo | Por qué |
 |---|---|---|
-| `APP_URL` | `http://127.0.0.1:5175` | El backend compara el `Origin` del refresco con este origen. Tiene que ser exactamente el del frontend: mismo esquema, `127.0.0.1` (no `localhost`) y el puerto 5175. |
+| `APP_URL` | `http://127.0.0.1:5175` | El backend responde con CORS solo a este origen y compara con él el `Origin` del refresco, del ticket y del WebSocket. Tiene que ser exactamente el del frontend: mismo esquema, `127.0.0.1` (no `localhost`) y el puerto 5175. |
 | `COOKIE_SECURE` | `true` | Los navegadores aceptan una cookie `Secure` sobre `http://127.0.0.1`. En producción es obligatoria. |
 
-**Otro backend local (opcional).** `CUADERNO_API=http://127.0.0.1:<puerto>` apunta el proxy a otro backend, por ejemplo uno contra la base de pruebas en el puerto 4201. Solo se acepta `127.0.0.1`.
+**Otro backend (opcional).** `VITE_API_URL=http://127.0.0.1:<puerto>` (solo el origen, sin ruta) apunta el frontend a otro backend, por ejemplo uno contra la base de pruebas en el puerto 4201. Se fija al construir: la CSP del build (`connect-src`) permite `'self'` y SOLO ese origen, en `http(s)` y `ws(s)`. En Vercel es obligatoria y `https`: el build falla sin ella. `CUADERNO_API` (el proxy) ya no existe.
 
 ## Pantallas de entrada
 
